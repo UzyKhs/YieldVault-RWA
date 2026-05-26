@@ -1,0 +1,1128 @@
+PASS src/__tests__/pagination.test.ts (15.817 s)
+  ● Console
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:36.995Z","level":"info","message":"DatabaseManager initialized","primaryConfigured":false,"replicaConfigured":false}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.688Z","level":"info","message":"Vault metrics updated in Prometheus gauges","tvl":1033974.2555312737,"sharePrice":1.2526153774617643}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.811Z","level":"info","message":"GET /transactions","correlationId":"53a5fe95-b984-4b4f-8f91-80ab0dedd5d8","method":"GET","url":"/api/transactions","status":200,"durationMs":61}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.846Z","level":"info","message":"GET /transactions","correlationId":"c33e6cf3-6e0d-49b5-b68f-23582b8420e5","method":"GET","url":"/api/transactions?limit=10","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.862Z","level":"info","message":"GET /transactions","correlationId":"c5789f8a-6ee1-4bbb-bcbd-09bab07e2d71","method":"GET","url":"/api/transactions?limit=200","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.878Z","level":"info","message":"GET /transactions","correlationId":"fb41c6b7-7f7a-47fb-8864-ba17c5cf53ac","method":"GET","url":"/api/transactions?limit=5","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.893Z","level":"info","message":"GET /transactions","correlationId":"116b6d6d-4891-40cb-8e58-d6b7e01b4ffb","method":"GET","url":"/api/transactions?limit=5&cursor=dHgtNQ","status":200,"durationMs":3}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.909Z","level":"info","message":"GET /transactions","correlationId":"dc7c5502-9b08-4f8a-bc07-844927a75040","method":"GET","url":"/api/transactions?limit=5&page=1","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.916Z","level":"info","message":"GET /transactions","correlationId":"cae89141-6e51-44a6-b51e-f93f3e133fcb","method":"GET","url":"/api/transactions?limit=5&page=2","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.931Z","level":"info","message":"GET /transactions","correlationId":"cd13cb77-75cd-4122-b20f-6e528491f3e2","method":"GET","url":"/api/transactions?type=deposit","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.946Z","level":"info","message":"GET /transactions","correlationId":"1f6b6cf5-1c95-478c-bf5b-d42f371c1631","method":"GET","url":"/api/transactions?type=withdrawal","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.964Z","level":"info","message":"GET /transactions","correlationId":"ef1ef55f-f801-4ca6-bc10-f9d3768b1830","method":"GET","url":"/api/transactions?limit=10","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.979Z","level":"info","message":"GET /transactions","correlationId":"d5d09fc0-a066-4767-a7fa-ed84fcc41f60","method":"GET","url":"/api/transactions?limit=10&sortBy=timestamp&sortOrder=asc","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:37.993Z","level":"info","message":"GET /transactions","correlationId":"3610a7ae-2ed6-4f35-bd61-1b07ef6bf30f","method":"GET","url":"/api/transactions?limit=10","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.008Z","level":"info","message":"GET /transactions","correlationId":"68071dc0-da74-45db-83c4-f47637eb8d56","method":"GET","url":"/api/transactions?walletAddress=GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.024Z","level":"info","message":"GET /transactions","correlationId":"47c87815-d81d-45f2-be92-373dc12b0916","method":"GET","url":"/api/transactions?cursor=invalid-cursor","status":200,"durationMs":3}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.042Z","level":"info","message":"GET /transactions","correlationId":"fba368a1-7ab0-46fc-8b7a-ad5b8777f2fd","method":"GET","url":"/api/transactions?page=-1","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.057Z","level":"info","message":"GET /portfolio/holdings","correlationId":"4e7fa529-9f9d-4d46-bdc1-e70577852723","method":"GET","url":"/api/portfolio/holdings","status":200,"durationMs":7}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.072Z","level":"info","message":"GET /portfolio/holdings","correlationId":"18d0e0a4-6459-4b44-a5da-93a71728f2a6","method":"GET","url":"/api/portfolio/holdings?status=active","status":200,"durationMs":6}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.079Z","level":"info","message":"GET /portfolio/holdings","correlationId":"2606e97b-65a0-409f-a3b4-5158a1337f9f","method":"GET","url":"/api/portfolio/holdings?status=pending","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.097Z","level":"info","message":"GET /portfolio/holdings","correlationId":"97a2c8e7-5eb9-46a4-96b4-e652df213e77","method":"GET","url":"/api/portfolio/holdings?limit=10","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.114Z","level":"info","message":"GET /portfolio/holdings","correlationId":"44904e26-d1e5-4af4-9055-4f1c7d11fe5d","method":"GET","url":"/api/portfolio/holdings?limit=5","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.126Z","level":"info","message":"GET /portfolio/holdings","correlationId":"4f9d68f6-f199-4826-982d-6d9f404117f2","method":"GET","url":"/api/portfolio/holdings?limit=5&cursor=aG9sZGluZy0xNA","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.140Z","level":"info","message":"GET /vault/history","correlationId":"5c736f2d-c5a0-4d2c-9698-e4e463eae52f","method":"GET","url":"/api/vault/history","status":200,"durationMs":8}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.149Z","level":"info","message":"GET /vault/history","correlationId":"016081fd-48b2-4a3a-ab21-04fbd53d5450","method":"GET","url":"/api/vault/history?from=2026-01-01&to=2026-01-31","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.174Z","level":"info","message":"GET /vault/history","correlationId":"613aedb1-6736-4ba0-a1ee-5137cd4299a2","method":"GET","url":"/api/vault/history?limit=10","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.188Z","level":"info","message":"GET /vault/history","correlationId":"96fc1f80-e65a-4a18-808c-3f2f65421cad","method":"GET","url":"/api/vault/history?limit=10&sortBy=date&sortOrder=asc","status":200,"durationMs":5}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.199Z","level":"info","message":"GET /vault/history","correlationId":"443724e5-c739-4c43-b273-fde504e21e15","method":"GET","url":"/api/vault/history?limit=5","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.213Z","level":"info","message":"GET /vault/history","correlationId":"4a5651f8-cfa4-496c-90c4-a87d052a0dae","method":"GET","url":"/api/vault/history?limit=500","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.228Z","level":"info","message":"GET /transactions","correlationId":"12235562-6142-4a9e-95ab-15fc0cd4694b","method":"GET","url":"/api/transactions?limit=1","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.242Z","level":"info","message":"GET /transactions","correlationId":"1fe104e7-cfa2-408e-8ca2-40dff3fb348d","method":"GET","url":"/api/transactions?page=1000000","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.263Z","level":"info","message":"GET /transactions","correlationId":"3f5d9e5d-7e50-4ad7-b622-2cf125e1ba55","method":"GET","url":"/api/transactions?limit=5&page=1","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.266Z","level":"info","message":"GET /transactions","correlationId":"599489a9-7ff4-4042-b34f-ffb6a6eff9b5","method":"GET","url":"/api/transactions?limit=5&page=2","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.281Z","level":"info","message":"GET /transactions","correlationId":"2c000aae-4e9f-468e-941a-49d150ef55c9","method":"GET","url":"/api/transactions?limit=5&page=3","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.290Z","level":"info","message":"GET /transactions","correlationId":"1862acdd-f128-48b6-9b06-661447c70a85","method":"GET","url":"/api/transactions?limit=5&page=4","status":200,"durationMs":7}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.292Z","level":"info","message":"GET /transactions","correlationId":"27ba499a-50c3-45f0-ba67-9ece0341d9da","method":"GET","url":"/api/transactions?limit=5&page=5","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.324Z","level":"info","message":"GET /transactions","correlationId":"3545cfeb-915e-4391-9318-785d68ed0f77","method":"GET","url":"/api/transactions?limit=5&page=1","status":200,"durationMs":3}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.332Z","level":"info","message":"GET /transactions","correlationId":"0a49c0f8-3238-4670-a84a-25f56c4844e9","method":"GET","url":"/api/transactions?limit=5&page=1","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.347Z","level":"info","message":"GET /transactions","correlationId":"1dfeeb78-fd94-4d16-abd1-f0578309b926","method":"GET","url":"/api/transactions?sortBy=invalidField","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.363Z","level":"info","message":"GET /transactions","correlationId":"648840ed-e07b-4dc8-b417-85d36124f897","method":"GET","url":"/api/transactions?sortOrder=invalid","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.375Z","level":"info","message":"GET /transactions","correlationId":"663e75bb-bf6b-41fe-b155-2544bb763666","method":"GET","url":"/api/transactions","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.388Z","level":"info","message":"GET /transactions","correlationId":"2441f83b-dc98-405f-b001-a6be8eeb1ce2","method":"GET","url":"/api/transactions?limit=10","status":200,"durationMs":5}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:38.399Z","level":"info","message":"GET /transactions","correlationId":"593f1439-be55-4d73-b7a3-217d311b392b","method":"GET","url":"/api/transactions?limit=1","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+PASS src/__tests__/rateLimiter.property.test.ts (7.699 s)
+  ● Console
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-18-0.029859378136246728","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-18-0.04527117657213109","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-3-0.2610448966186848","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-18-0.9068113124846997","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-3-0.8115998977778555","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-9-0.8838270630870237","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-18-0.6361258697548681","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-4-0.7698827411740152","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-9-0.7692062422368943","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-p5-17-0.6140108838779648","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+PASS src/__tests__/api.test.ts
+  ● Console
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:47.810Z","level":"info","message":"DatabaseManager initialized","primaryConfigured":false,"replicaConfigured":false}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.013Z","level":"info","message":"Vault metrics updated in Prometheus gauges","tvl":1064922.437657296,"sharePrice":1.269557175268795}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.041Z","level":"info","message":"GET /health","correlationId":"15ea0677-e1fb-4918-a187-1e4c079df635","method":"GET","url":"/health","status":200,"durationMs":9}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.092Z","level":"info","message":"GET /health","correlationId":"7ba7ac6e-83ff-45cf-812d-462c698a18e1","method":"GET","url":"/health","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.112Z","level":"info","message":"GET /health","correlationId":"23602b86-f4ee-4eff-8cf0-c24bae641bbb","method":"GET","url":"/health","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.130Z","level":"info","message":"GET /ready","correlationId":"1fcb3a33-685f-40dc-b4dc-e7924a45634c","method":"GET","url":"/ready","status":200,"durationMs":3}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.158Z","level":"info","message":"GET /ready","correlationId":"bfd07aa8-7be8-45ce-9d73-af2a06e1b315","method":"GET","url":"/ready","status":200,"durationMs":3}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.188Z","level":"info","message":"GET /health","correlationId":"e5921526-f1b1-469a-a948-3efe3557140f","method":"GET","url":"/health","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.199Z","level":"info","message":"GET /health","correlationId":"a4a0b5c5-d5df-444c-a535-ace404a2e74d","method":"GET","url":"/health","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.213Z","level":"info","message":"GET /health","correlationId":"1a784a77-c0e5-4f75-9390-f1fbec569835","method":"GET","url":"/health","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.226Z","level":"info","message":"GET /health","correlationId":"d34400cf-120b-4d5e-a236-19a61b1772b2","method":"GET","url":"/health","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.238Z","level":"info","message":"GET /health","correlationId":"fffdb5ba-e877-4d2c-93d3-e41b14a0043a","method":"GET","url":"/health","status":200,"durationMs":6}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.257Z","level":"info","message":"GET /ready","correlationId":"c7da806b-c330-4ccd-a568-08f3ff43ff80","method":"GET","url":"/ready","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.266Z","level":"info","message":"GET /ready","correlationId":"b634b84e-63fa-4ca7-9548-847052a00a0e","method":"GET","url":"/ready","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.281Z","level":"info","message":"GET /ready","correlationId":"b2a48817-e1e1-4997-851c-4a75eb3d957c","method":"GET","url":"/ready","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.292Z","level":"info","message":"GET /ready","correlationId":"cdfd94bb-208f-40ab-8304-5485e3718b92","method":"GET","url":"/ready","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.312Z","level":"info","message":"GET /ready","correlationId":"a2e5542a-3fb5-4089-83dd-c662aa0ad319","method":"GET","url":"/ready","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.329Z","level":"info","message":"GET /api/vault/summary","correlationId":"17e3d11f-00fa-4363-91f3-5d4a77637db4","method":"GET","url":"/api/vault/summary","status":200,"durationMs":4}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.482Z","level":"info","message":"GET /api/vault/summary","correlationId":"8be1c5a9-cdd0-4de8-be51-52fd359261bf","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.489Z","level":"info","message":"GET /api/vault/summary","correlationId":"4837a653-9ea5-4fe1-8e2b-8c22466d5dd5","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.491Z","level":"info","message":"GET /api/vault/summary","correlationId":"b8665eeb-8220-4dc2-9094-885bbf9149c6","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.493Z","level":"info","message":"GET /api/vault/summary","correlationId":"d5d03edd-fb5a-494a-ac64-4577b029d690","method":"GET","url":"/api/vault/summary","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.495Z","level":"info","message":"GET /api/vault/summary","correlationId":"33457c9f-0d15-4fb2-b13d-2f8d4c85f34d","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.499Z","level":"info","message":"GET /api/vault/summary","correlationId":"07277f5a-d080-4a5b-bd4a-947ca2d8c418","method":"GET","url":"/api/vault/summary","status":200,"durationMs":3}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.507Z","level":"info","message":"GET /api/vault/summary","correlationId":"06ef27b3-df33-415d-b376-8157c328f6ea","method":"GET","url":"/api/vault/summary","status":200,"durationMs":7}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.508Z","level":"info","message":"GET /api/vault/summary","correlationId":"95a47352-f92a-4009-9706-d336627d6742","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.513Z","level":"info","message":"GET /api/vault/summary","correlationId":"bc31488c-90c8-4c57-8f73-257f2c3b580a","method":"GET","url":"/api/vault/summary","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.515Z","level":"info","message":"GET /api/vault/summary","correlationId":"a386e6cd-10ec-4d21-9f9f-b6b1ff9afae2","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.522Z","level":"info","message":"GET /api/vault/summary","correlationId":"c5c150ee-57ca-4824-8678-ff395f2ab8c0","method":"GET","url":"/api/vault/summary","status":200,"durationMs":7}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.523Z","level":"info","message":"GET /api/vault/summary","correlationId":"52f76ac7-055e-45ee-915d-9495b6827cfc","method":"GET","url":"/api/vault/summary","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.527Z","level":"info","message":"GET /api/vault/summary","correlationId":"8a2b168b-de8a-434e-a295-617494963436","method":"GET","url":"/api/vault/summary","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.529Z","level":"info","message":"GET /api/vault/summary","correlationId":"5020b02b-be9c-4242-9f5a-54d2726b3a61","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.530Z","level":"info","message":"GET /api/vault/summary","correlationId":"938feec7-ede7-4fad-81a4-d5070977b0a1","method":"GET","url":"/api/vault/summary","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.544Z","level":"info","message":"GET /api/vault/summary","correlationId":"8d38697b-98b1-488c-9aef-2dcd079fc220","method":"GET","url":"/api/vault/summary","status":200,"durationMs":12}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.545Z","level":"info","message":"GET /api/vault/summary","correlationId":"b988e4bb-c0be-4a82-97ef-8b3115b60e4b","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.547Z","level":"info","message":"GET /api/vault/summary","correlationId":"94f22be5-8537-40f0-88e9-a759a6933b30","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.549Z","level":"info","message":"GET /api/vault/summary","correlationId":"7250bf83-6cd0-4896-a00c-c50e77f731bb","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.557Z","level":"info","message":"GET /api/vault/summary","correlationId":"7e990d25-cd36-46df-88f9-e48bdd65c509","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.558Z","level":"info","message":"GET /api/vault/summary","correlationId":"43d867f0-887f-4123-90ad-888be608cf13","method":"GET","url":"/api/vault/summary","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.561Z","level":"info","message":"GET /api/vault/summary","correlationId":"ab630d47-5017-4b67-baae-a69a9bc2dcdd","method":"GET","url":"/api/vault/summary","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.564Z","level":"info","message":"GET /api/vault/summary","correlationId":"cae96eb7-c795-4781-9e9f-430d48d7aac9","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.566Z","level":"info","message":"GET /api/vault/summary","correlationId":"e5b54801-d0cb-4c41-beb8-a448a405e88e","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.577Z","level":"info","message":"GET /api/vault/summary","correlationId":"1ed0c76a-73bd-4460-9185-0b85b8aaf9af","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.579Z","level":"info","message":"GET /api/vault/summary","correlationId":"7bbccda8-6cf5-4fb1-ba38-10bfcfa73202","method":"GET","url":"/api/vault/summary","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.580Z","level":"info","message":"GET /api/vault/summary","correlationId":"5117f1a8-2436-4004-9003-7ace50b2b804","method":"GET","url":"/api/vault/summary","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.590Z","level":"info","message":"GET /api/vault/summary","correlationId":"9cb7435b-a38a-48a2-a791-d1be39eb258e","method":"GET","url":"/api/vault/summary","status":200,"durationMs":9}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.591Z","level":"info","message":"GET /api/vault/summary","correlationId":"be67f45f-326e-4549-8bf0-f5cc58a474e3","method":"GET","url":"/api/vault/summary","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.593Z","level":"warn","message":"GET /api/vault/summary","correlationId":"9c9169e9-559b-4746-a997-9d02eb3eb769","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.595Z","level":"warn","message":"GET /api/vault/summary","correlationId":"9fd57551-a2c8-463c-b79a-3448c7dfeba8","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.598Z","level":"warn","message":"GET /api/vault/summary","correlationId":"2358978a-097b-4222-bcd6-216d61a286d9","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.599Z","level":"warn","message":"GET /api/vault/summary","correlationId":"62fab422-bb8a-4258-8990-6516ff6c5dc1","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.607Z","level":"warn","message":"GET /api/vault/summary","correlationId":"3d302607-241a-43c2-8089-da2367cbc7c2","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.610Z","level":"warn","message":"GET /api/vault/summary","correlationId":"63cc15bb-8cd3-4cfe-ab4d-f9cd4350d193","method":"GET","url":"/api/vault/summary","status":429,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.893Z","level":"warn","message":"GET /api/vault/summary","correlationId":"ad6bee7e-3674-4c51-8796-e6bee805fb33","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.896Z","level":"warn","message":"GET /api/vault/summary","correlationId":"792e3425-2fca-495b-9e4e-d3d41ed06b54","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.898Z","level":"warn","message":"GET /api/vault/summary","correlationId":"652b7293-d7f5-430a-b055-263bd615b0e7","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.912Z","level":"warn","message":"GET /api/vault/summary","correlationId":"8257f87e-890c-4482-9fff-6d5197194270","method":"GET","url":"/api/vault/summary","status":429,"durationMs":6}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.914Z","level":"warn","message":"GET /api/vault/summary","correlationId":"6473d76e-e2a7-4337-9412-7b6625f8285b","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.915Z","level":"warn","message":"GET /api/vault/summary","correlationId":"8447e9d3-daa8-4376-8ea8-982b29be9715","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.922Z","level":"warn","message":"GET /api/vault/summary","correlationId":"16acb1d4-fdd9-4400-8b3c-99fca9224111","method":"GET","url":"/api/vault/summary","status":429,"durationMs":5}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.923Z","level":"warn","message":"GET /api/vault/summary","correlationId":"5dbd31a8-a60f-467b-9ead-74f596f30d9c","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.925Z","level":"warn","message":"GET /api/vault/summary","correlationId":"28bf415d-d7bb-4aef-996a-ef574fd3eb8c","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.927Z","level":"warn","message":"GET /api/vault/summary","correlationId":"be29afa0-9841-4c9a-89ad-ea7e5a35bcec","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.928Z","level":"warn","message":"GET /api/vault/summary","correlationId":"68a0408c-3b54-4abe-98ba-85b9706378aa","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.930Z","level":"warn","message":"GET /api/vault/summary","correlationId":"6341000e-6274-4334-bb71-21737679ea50","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.932Z","level":"warn","message":"GET /api/vault/summary","correlationId":"5a194c79-cd27-42cc-8773-7b64ea8063c6","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.939Z","level":"warn","message":"GET /api/vault/summary","correlationId":"9d40fc48-f12d-430b-b3dd-aa3ab4307ca4","method":"GET","url":"/api/vault/summary","status":429,"durationMs":6}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.942Z","level":"warn","message":"GET /api/vault/summary","correlationId":"6baed2df-a922-4506-b11c-437753d5e47a","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.945Z","level":"warn","message":"GET /api/vault/summary","correlationId":"f18b1376-9294-4d91-9a07-51599425cc35","method":"GET","url":"/api/vault/summary","status":429,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.947Z","level":"warn","message":"GET /api/vault/summary","correlationId":"7177797d-16c6-42bb-bb8c-51edeba070c3","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.948Z","level":"warn","message":"GET /api/vault/summary","correlationId":"4233921e-9b58-421f-afdb-fd5272e4c5bf","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.955Z","level":"warn","message":"GET /api/vault/summary","correlationId":"0b8c8e47-7235-4a5e-8e34-61e2c754dc4b","method":"GET","url":"/api/vault/summary","status":429,"durationMs":6}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.960Z","level":"warn","message":"GET /api/vault/summary","correlationId":"0a9a2515-bb96-4662-9d14-fd14288f07c7","method":"GET","url":"/api/vault/summary","status":429,"durationMs":4}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.962Z","level":"warn","message":"GET /api/vault/summary","correlationId":"251d94e5-5ba4-4a23-92c1-dbb2506bc5d2","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.964Z","level":"warn","message":"GET /api/vault/summary","correlationId":"76b35569-70a8-46b1-b485-b0ba3663ef07","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.980Z","level":"warn","message":"GET /api/vault/summary","correlationId":"163b0a1a-dc11-425f-a923-f382a919187c","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.981Z","level":"warn","message":"GET /api/vault/summary","correlationId":"2fd7d25f-3430-4aa3-a29b-1c08e8d707d9","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.983Z","level":"warn","message":"GET /api/vault/summary","correlationId":"cc487d6b-7e9e-4e4d-86e2-22aea28f215a","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.990Z","level":"warn","message":"GET /api/vault/summary","correlationId":"01c8f16b-108c-493e-bded-c36b26de97e1","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.992Z","level":"warn","message":"GET /api/vault/summary","correlationId":"aefdff1d-463a-49c0-ba14-231a60ebb499","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.995Z","level":"warn","message":"GET /api/vault/summary","correlationId":"f262d6db-e76b-47eb-a7c2-275ba45d8b0b","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.996Z","level":"warn","message":"GET /api/vault/summary","correlationId":"31c1c077-ba98-4615-beea-4f832ee4b568","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:48.998Z","level":"warn","message":"GET /api/vault/summary","correlationId":"c35bdbb3-1887-4cc9-9d58-5e82fa18b1ef","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.006Z","level":"warn","message":"GET /api/vault/summary","correlationId":"0d6970a9-37aa-4482-93e4-29b5fd82c1e8","method":"GET","url":"/api/vault/summary","status":429,"durationMs":7}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.008Z","level":"warn","message":"GET /api/vault/summary","correlationId":"143c8bdc-f326-4440-bc44-1723e4950640","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.010Z","level":"warn","message":"GET /api/vault/summary","correlationId":"4d61bf94-9014-4621-b6e7-a590fb627912","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.012Z","level":"warn","message":"GET /api/vault/summary","correlationId":"286bd916-30a6-43ab-a03e-50dec1826441","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.013Z","level":"warn","message":"GET /api/vault/summary","correlationId":"7289ccf4-baf7-48d2-bea6-5d1783451ae7","method":"GET","url":"/api/vault/summary","status":429,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.145Z","level":"warn","message":"GET /api/vault/summary","correlationId":"c683fd31-2941-4f34-921c-618d1317d4ff","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.159Z","level":"warn","message":"GET /api/v1/vault/summary","correlationId":"7feaed5a-c7e5-4c4e-acbb-52f4455dcf44","method":"GET","url":"/api/v1/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.191Z","level":"info","message":"GET /api/vault/summary","correlationId":"bf23c32c-ec31-498a-b497-0ec1fd845926","method":"GET","url":"/api/vault/summary","status":200,"durationMs":0}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.205Z","level":"warn","message":"GET /api/unknown","correlationId":"c2ce043c-795d-45b3-b51f-d87ae4454a9d","method":"GET","url":"/api/unknown","status":404,"durationMs":6}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.225Z","level":"warn","message":"GET /api/nonexistent","correlationId":"690155f9-edc6-481b-acba-14040c8250da","method":"GET","url":"/api/nonexistent","status":404,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.241Z","level":"warn","message":"GET /api/vault/summary","correlationId":"6f0dfbfc-0d2d-4479-aec4-e3aa23a821b7","method":"GET","url":"/api/vault/summary","status":429,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.256Z","level":"info","message":"GET /health","correlationId":"e320fe6c-6798-444f-a51d-271845198e25","method":"GET","url":"/health","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:49.332Z","level":"warn","message":"POST /api/vault/summary","correlationId":"75670ac7-f5a1-422d-a2a7-6b3d5473390a","method":"POST","url":"/api/vault/summary","status":404,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+PASS src/__tests__/rateLimiter.test.ts
+  ● Console
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+    console.log
+      {"level":"warn","event":"rate_limited","key":"wallet-429-test","path":"/test","resetTime":60}
+
+      at Object.handler (src/rateLimiter.ts:229:15)
+
+    console.log
+      {"level":"warn","event":"redis_not_configured","message":"REDIS_URL not set; using in-memory rate limit store"}
+
+      at new RedisClientManager (src/rateLimiter.ts:76:15)
+
+PASS src/__tests__/governance.test.ts
+  ● Console
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:52.605Z","level":"info","message":"DatabaseManager initialized","primaryConfigured":false,"replicaConfigured":false}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:52.845Z","level":"info","message":"Vault metrics updated in Prometheus gauges","tvl":1026955.9590460793,"sharePrice":1.2933887639710113}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:52.961Z","level":"info","message":"GET /api/vault/summary","correlationId":"950ed7c3-094a-4d87-a2ef-f1347705c136","method":"GET","url":"/api/vault/summary","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:53.006Z","level":"info","message":"POST /deposits","correlationId":"b6acc924-cce3-4250-8fd1-246f6648868a","method":"POST","url":"/api/v1/vault/deposits","status":201,"durationMs":27}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:53.062Z","level":"info","message":"POST /deposits","correlationId":"afe36ec5-d2cb-4828-a93b-7f8018572dd4","method":"POST","url":"/api/v1/vault/deposits","status":201,"durationMs":7}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:53.189Z","level":"info","message":"POST /deposits","correlationId":"8f7603f9-090d-4e20-b1bd-a3afd70dcc42","method":"POST","url":"/api/v1/vault/deposits","status":201,"durationMs":99}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:53.213Z","level":"warn","message":"POST /deposits","correlationId":"4e1b4dca-0d59-4b80-9938-8f48f4aae563","method":"POST","url":"/api/v1/vault/deposits","status":409,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:53.261Z","level":"info","message":"GET /admin/jobs/dashboard","correlationId":"80b82cfa-1b62-40fc-950d-f0a2c737a48f","method":"GET","url":"/admin/jobs/dashboard","status":200,"durationMs":2}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:53.275Z","level":"info","message":"GET /admin/cache/stats","correlationId":"d6174f48-3e97-44b9-8ca2-b15b4da749de","method":"GET","url":"/admin/cache/stats","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:53.288Z","level":"info","message":"GET /admin/audit-logs","correlationId":"21cecf04-e679-4cdd-b4d9-0b806f96fc15","method":"GET","url":"/admin/audit-logs","status":200,"durationMs":1}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+PASS src/__tests__/sanitization.test.ts
+PASS src/__tests__/cors.test.ts
+  ● Console
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:55.182Z","level":"warn","message":"CORS request blocked from unauthorized origin","origin":"http://malicious-site.com"}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+    console.log
+      {"timestamp":"2026-04-27T21:36:55.421Z","level":"warn","message":"CORS request blocked from unauthorized origin","origin":"http://malicious-site.com"}
+
+      at Logger.log (src/middleware/structuredLogging.ts:49:13)
+
+PASS src/__tests__/circuitBreaker.test.ts
+PASS src/__tests__/featureFlags.test.ts
+
+Test Suites: 9 passed, 9 total
+Tests:       102 passed, 102 total
+Snapshots:   0 total
+Time:        34.101 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

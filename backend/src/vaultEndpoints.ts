@@ -10,6 +10,7 @@ import { requireFlag } from './featureFlags';
 import { referralService } from './referralService';
 import { getPrismaClient } from './prismaClient';
 import { emitTransactionEvent, TransactionEventType } from './webhookDelivery';
+import { exportTransactions, ExportOptions } from './transactionExport';
 import crypto from 'crypto';
 
 const router = Router();
@@ -248,6 +249,95 @@ router.post('/deposits/v2', requireFlag('deposit-v2'), (req: Request, res: Respo
  */
 router.post('/strategy', requireFlag('strategy-selection'), (_req: Request, res: Response) => {
   res.status(200).json({ message: 'Strategy selection endpoint (v2 preview)' });
+});
+
+/**
+ * GET /api/v1/vault/transactions/export
+ * Export transactions in CSV or JSON format
+ * Supports filtering by date range, user, and transaction type
+ * Issue #440: Backend: Add transaction history export endpoint supporting CSV and JSON formats
+ */
+router.get('/transactions/export', async (req: Request, res: Response) => {
+  try {
+    const { format = 'json', startDate, endDate, limit, userAddress, type } = req.query;
+
+    // Validate format
+    if (format !== 'json' && format !== 'csv') {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Format must be either "json" or "csv"',
+      });
+    }
+
+    // Build export options
+    const options: ExportOptions = {
+      format: format as 'csv' | 'json',
+      limit: limit ? Math.min(parseInt(limit as string), 100000) : undefined,
+    };
+
+    if (userAddress) {
+      options.userAddress = userAddress as string;
+    }
+
+    if (type && (type === 'deposit' || type === 'withdrawal')) {
+      options.type = type as 'deposit' | 'withdrawal';
+    }
+
+    if (startDate) {
+      try {
+        options.startDate = new Date(startDate as string);
+        if (isNaN(options.startDate.getTime())) {
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: 'Invalid startDate format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)',
+          });
+        }
+      } catch {
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: 'Invalid startDate',
+        });
+      }
+    }
+
+    if (endDate) {
+      try {
+        options.endDate = new Date(endDate as string);
+        if (isNaN(options.endDate.getTime())) {
+          return res.status(400).json({
+            error: 'Bad Request',
+            message: 'Invalid endDate format. Use ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)',
+          });
+        }
+      } catch {
+        return res.status(400).json({
+          error: 'Bad Request',
+          message: 'Invalid endDate',
+        });
+      }
+    }
+
+    // Perform export
+    const result = await exportTransactions(options);
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', result.mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader('X-Export-Format', result.format);
+    res.setHeader('X-Record-Count', String(result.recordCount));
+    res.setHeader('X-Exported-At', result.exportedAt);
+
+    return res.status(200).send(result.content);
+  } catch (error) {
+    logger.log('error', 'Transaction export failed', {
+      error: error instanceof Error ? error.message : String(error),
+      traceId: getCurrentTraceId(),
+    });
+    return res.status(500).json({
+      error: 'Internal Server Error',
+      message: 'Failed to export transactions',
+    });
+  }
 });
 
 export default router;

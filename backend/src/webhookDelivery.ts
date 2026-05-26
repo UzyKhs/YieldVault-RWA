@@ -1,4 +1,10 @@
 import crypto from 'crypto';
+import {
+  createSignatureHeader,
+  createTimestampHeader,
+  SIGNATURE_HEADER,
+  TIMESTAMP_HEADER,
+} from './webhookSignatureVerification';
 
 export type TransactionEventType =
   | 'transaction.deposit.created'
@@ -212,10 +218,10 @@ async function deliverWithRetry(
   };
 
   if (endpoint.secret) {
-    headers['X-YieldVault-Signature'] = crypto
-      .createHmac('sha256', endpoint.secret)
-      .update(body)
-      .digest('hex');
+    // Use improved signature verification approach
+    // Includes timestamp for replay attack prevention
+    headers['X-YieldVault-Signature'] = createSignatureHeader(body, endpoint.secret);
+    headers['X-YieldVault-Timestamp'] = createTimestampHeader();
   }
 
   const controller = new AbortController();

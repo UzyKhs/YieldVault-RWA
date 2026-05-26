@@ -9,6 +9,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { logger } from './middleware/structuredLogging';
+import { addQueryMonitoring } from './queryMonitoring';
 
 let prismaClientInstance: PrismaClient | null = null;
 
@@ -40,6 +41,23 @@ export function getPrismaClient(): PrismaClient {
     // Create the Prisma Client instance with explicit options
     try {
       prismaClientInstance = new PrismaClient(clientOptions) as any;
+
+      // Add query monitoring middleware
+      // Issue #443: Add slow query detection and per-query timing metrics
+      const slowQueryThresholdMs = parseInt(
+        process.env.SLOW_QUERY_THRESHOLD_MS || '1000',
+        10,
+      );
+      addQueryMonitoring(prismaClientInstance, {
+        slowQueryThresholdMs,
+        enableDetailedLogging: process.env.NODE_ENV !== 'production',
+      });
+
+      if (!isTestEnv) {
+        logger.log('info', 'Query monitoring enabled', {
+          slowQueryThresholdMs,
+        });
+      }
     } catch (error) {
       logger.log('error', 'Failed to create Prisma Client', {
         error: error instanceof Error ? error.message : String(error),
