@@ -164,7 +164,6 @@ export function paginateWithCursor<T>(
 ): { data: T[]; pagination: PaginationMeta } {
   const limit = query.limit || DEFAULT_PAGINATION_CONFIG.defaultLimit;
   let startIndex = 0;
-  let invalidCursor = false;
 
   if (query.page && query.page > 0) {
     startIndex = (query.page - 1) * limit;
@@ -192,18 +191,6 @@ export function paginateWithCursor<T>(
     }
 
     startIndex = cursorIndex + 1;
-  }
-
-  if (invalidCursor) {
-    return {
-      data: [],
-      pagination: {
-        count: 0,
-        total: items.length,
-        hasNextPage: false,
-        hasPrevPage: false,
-      },
-    };
   }
 
   // Extract page items
