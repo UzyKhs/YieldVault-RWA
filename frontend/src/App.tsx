@@ -17,7 +17,6 @@ import { queryClient } from "./lib/queryClient";
 import { clearWalletSessionState } from "./lib/sessionCleanup";
 import ErrorFallback from "./components/ErrorFallback";
 import RouteLoadingFallback from "./components/RouteLoadingFallback";
-import { PreferencesProvider } from "./context/PreferencesContext";
 import NetworkWarningBanner from "./components/NetworkWarningBanner";
 import OfflineBanner from "./components/OfflineBanner";
 import { useVault, VaultProvider } from "./context/VaultContext";
