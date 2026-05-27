@@ -24,6 +24,17 @@ model VaultState {
   updatedAt   DateTime @updatedAt
 }
 
+model SharePriceSnapshot {
+  id         Int      @id @default(autoincrement())
+  sharePrice String
+  recordedAt DateTime @default(now())
+  ledgerSeq  Int?
+  createdAt  DateTime @default(now())
+
+  @@index([recordedAt])
+  @@index([ledgerSeq])
+}
+
 model Transaction {
   id           String   @id @default(uuid())
   user         String

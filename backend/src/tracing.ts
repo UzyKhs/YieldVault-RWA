@@ -10,8 +10,6 @@
 
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
-import { Resource } from '@opentelemetry/resources';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import {
@@ -23,6 +21,7 @@ import {
 } from '@opentelemetry/api';
 
 const OTEL_ENABLED = process.env.NODE_ENV !== 'test' && process.env.OTEL_ENABLED !== 'false';
+const IS_TEST_ENV = process.env.NODE_ENV === 'test';
 const SERVICE_NAME = process.env.OTEL_SERVICE_NAME || 'yieldvault-backend';
 const OTLP_ENDPOINT =
   process.env.OTEL_EXPORTER_OTLP_ENDPOINT || 'http://localhost:4318';
@@ -61,10 +60,7 @@ export function initTracing(): void {
   const exporter = new OTLPTraceExporter({ url: `${OTLP_ENDPOINT}/v1/traces` });
 
   sdk = new NodeSDK({
-    resource: new Resource({
-      [ATTR_SERVICE_NAME]: SERVICE_NAME,
-      [ATTR_SERVICE_VERSION]: process.env.npm_package_version || '1.0.0',
-    }),
+    serviceName: SERVICE_NAME,
     traceExporter: exporter,
     instrumentations,
   });
