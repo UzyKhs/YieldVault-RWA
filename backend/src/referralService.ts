@@ -246,7 +246,7 @@ export class ReferralService {
   async getOrCreateReferralCode(ownerAddress: string): Promise<string> {
     const prisma = getPrisma();
 
-    const existing = await prisma.referralCode.findUnique({
+    const existing = await prisma.referralCode.findFirst({
       where: { ownerAddress },
     });
 
