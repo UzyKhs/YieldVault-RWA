@@ -1,11 +1,15 @@
 import { getPrismaClient } from './prismaClient';
-import Decimal from 'decimal.js';
 import { logger } from './middleware/structuredLogging';
 
 const getPrisma = () => getPrismaClient();
 
-const REFERRAL_REWARD_PERCENTAGE = new Decimal(process.env.REFERRAL_REWARD_PERCENTAGE || '0.05');
+const REFERRAL_REWARD_PERCENTAGE = Number(process.env.REFERRAL_REWARD_PERCENTAGE || '0.05');
 const REFERRAL_YIELD_PRECISION = 6;
+
+function roundToPrecision(value: number, precision = REFERRAL_YIELD_PRECISION): number {
+  const factor = 10 ** precision;
+  return Math.round(value * factor) / factor;
+}
 
 type WalletTransactionType = 'deposit' | 'withdrawal';
 
@@ -103,22 +107,19 @@ export class ReferralService {
       return null;
     }
 
-    let totalReward = new Decimal(0);
+    let totalReward = 0;
     let profitableReferrals = 0;
 
     for (const ref of referrals) {
       const yieldEarned = await this.calculateUserYield(ref.referredAddress);
-      if (yieldEarned.gt(0)) {
-        const reward = yieldEarned.mul(REFERRAL_REWARD_PERCENTAGE);
-        totalReward = totalReward.plus(reward);
+      if (yieldEarned > 0) {
+        const reward = yieldEarned * REFERRAL_REWARD_PERCENTAGE;
+        totalReward += reward;
         profitableReferrals += 1;
       }
     }
 
-    const roundedReward = totalReward.toDecimalPlaces(
-      REFERRAL_YIELD_PRECISION,
-      Decimal.ROUND_HALF_UP,
-    );
+    const roundedReward = roundToPrecision(totalReward);
 
     logger.log('info', 'Referral reward summary computed', {
       referrer: maskWalletAddress(referrerAddress),
@@ -136,7 +137,7 @@ export class ReferralService {
   /**
    * Calculates user net yield from transaction history and share price snapshots.
    */
-  private async calculateUserYield(walletAddress: string): Promise<Decimal> {
+  private async calculateUserYield(walletAddress: string): Promise<number> {
     const prisma = getPrisma();
     const [transactions, snapshots] = await Promise.all([
       prisma.transaction.findMany({
@@ -166,12 +167,12 @@ export class ReferralService {
         transactionCount: transactions.length,
         snapshotCount: snapshots.length,
       });
-      return new Decimal(0);
+      return 0;
     }
 
-    let shareBalance = new Decimal(0);
-    let totalDeposited = new Decimal(0);
-    let totalWithdrawn = new Decimal(0);
+    let shareBalance = 0;
+    let totalDeposited = 0;
+    let totalWithdrawn = 0;
     let depositCount = 0;
     let withdrawalCount = 0;
 
@@ -180,32 +181,32 @@ export class ReferralService {
         snapshots as SharePriceSnapshotRecord[],
         transaction.timestamp,
       );
-      if (sharePrice.lte(0)) {
+      if (sharePrice <= 0) {
         logger.log('warn', 'Referral yield calculation aborted due to invalid share price', {
           wallet: maskWalletAddress(walletAddress),
           transactionTimestamp: transaction.timestamp.toISOString(),
           transactionType: transaction.type,
         });
-        return new Decimal(0);
+        return 0;
       }
 
-      const amount = new Decimal(transaction.amount);
+      const amount = Number(transaction.amount);
 
       if (transaction.type === 'deposit') {
         depositCount += 1;
-        totalDeposited = totalDeposited.plus(amount);
-        shareBalance = shareBalance.plus(amount.div(sharePrice));
+        totalDeposited += amount;
+        shareBalance += amount / sharePrice;
       } else {
         withdrawalCount += 1;
-        totalWithdrawn = totalWithdrawn.plus(amount);
-        shareBalance = shareBalance.minus(amount.div(sharePrice));
+        totalWithdrawn += amount;
+        shareBalance -= amount / sharePrice;
       }
     }
 
     const latestSnapshot = snapshots[snapshots.length - 1];
-    const latestSharePrice = new Decimal(latestSnapshot.sharePrice);
-    const endingValue = shareBalance.mul(latestSharePrice);
-    const netYield = endingValue.plus(totalWithdrawn).minus(totalDeposited);
+    const latestSharePrice = Number(latestSnapshot.sharePrice);
+    const endingValue = shareBalance * latestSharePrice;
+    const netYield = endingValue + totalWithdrawn - totalDeposited;
 
     logger.log('info', 'Referral yield calculated from history', {
       wallet: maskWalletAddress(walletAddress),
@@ -221,13 +222,13 @@ export class ReferralService {
       netYield: netYield.toFixed(REFERRAL_YIELD_PRECISION),
     });
 
-    return netYield;
+    return roundToPrecision(netYield);
   }
 
   private getSharePriceForTimestamp(
     snapshots: SharePriceSnapshotRecord[],
     timestamp: Date,
-  ): Decimal {
+  ): number {
     let candidate = snapshots[0];
 
     for (const snapshot of snapshots) {
@@ -237,7 +238,7 @@ export class ReferralService {
       candidate = snapshot;
     }
 
-    return new Decimal(candidate.sharePrice);
+    return Number(candidate.sharePrice);
   }
 
   /**

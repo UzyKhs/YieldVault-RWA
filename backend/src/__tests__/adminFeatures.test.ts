@@ -7,6 +7,7 @@ import { resetAuditLogs } from '../auditLog';
 describe('Admin backend features', () => {
   const adminKey = 'admin-feature-test-key';
   const authHeader = { Authorization: `ApiKey ${adminKey}` };
+  const walletAddress = 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567';
 
   beforeAll(() => {
     registerApiKey(adminKey);
@@ -36,12 +37,17 @@ describe('Admin backend features', () => {
 
     expect(webhookResponse.status).toBe(201);
 
+    await request(app)
+      .post('/admin/allowlist/add')
+      .set(authHeader)
+      .send({ walletAddress, reason: 'admin-feature-test' });
+
     const depositResponse = await request(app)
       .post('/api/v1/vault/deposits')
       .send({
         amount: '125.00',
         asset: 'USDC',
-        walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+        walletAddress,
       });
 
     expect(depositResponse.status).toBe(201);

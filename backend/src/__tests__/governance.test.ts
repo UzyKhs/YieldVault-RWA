@@ -33,6 +33,11 @@ describe('Backend governance', () => {
       walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
     };
 
+    await request(app)
+      .post('/admin/allowlist/add')
+      .set('Authorization', `ApiKey ${adminApiKey}`)
+      .send({ walletAddress: payload.walletAddress, reason: 'governance-test' });
+
     const first = await request(app)
       .post('/api/v1/vault/deposits')
       .set('x-idempotency-key', 'deposit-key-1')
@@ -50,13 +55,18 @@ describe('Backend governance', () => {
   });
 
   it('rejects conflicting requests that reuse the same idempotency key', async () => {
+    await request(app)
+      .post('/admin/allowlist/add')
+      .set('Authorization', `ApiKey ${adminApiKey}`)
+      .send({ walletAddress: targetWallet, reason: 'governance-test' });
+
     const first = await request(app)
       .post('/api/v1/vault/deposits')
       .set('x-idempotency-key', 'deposit-key-2')
       .send({
         amount: 250,
         asset: 'USDC',
-        walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+        walletAddress: targetWallet,
       });
 
     const second = await request(app)
@@ -65,7 +75,7 @@ describe('Backend governance', () => {
       .send({
         amount: 300,
         asset: 'USDC',
-        walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+        walletAddress: targetWallet,
       });
 
     expect(first.status).toBe(201);

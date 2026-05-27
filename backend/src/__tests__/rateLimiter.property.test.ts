@@ -1,14 +1,23 @@
 /**
  * @file rateLimiter.property.test.ts
- * Property-based tests for the Redis-backed rate limiter.
- *
- * Uses fast-check to verify universal correctness properties across
- * generated inputs. Each property runs a minimum of 100 iterations.
+ * Property-style tests for the Redis-backed rate limiter.
  */
 
-import * as fc from 'fast-check';
 import express, { Request, Response } from 'express';
 import request from 'supertest';
+
+function randomInt(min: number, max: number): number {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomAlphaNumeric(length: number): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return out;
+}
 
 // Helper: build a minimal express app with a fresh in-memory limiter
 function buildApp(max: number, windowMs = 60000) {
@@ -29,41 +38,28 @@ function buildApp(max: number, windowMs = 60000) {
 // Feature: redis-rate-limiting, Property 5: 429 headers and body
 describe('Property 5: Requests beyond the limit receive 429 with required headers and body', () => {
   it('holds for randomly generated limit values', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.integer({ min: 1, max: 20 }),
-        async (limit) => {
-          const app = buildApp(limit);
-          const key = `wallet-p5-${limit}-${Math.random()}`;
+    for (let run = 0; run < 10; run++) {
+      const limit = randomInt(1, 20);
+      const app = buildApp(limit);
+      const key = `wallet-p5-${limit}-${run}-${Date.now()}`;
 
-          // Make exactly `limit` requests (all should succeed)
-          for (let i = 0; i < limit; i++) {
-            await request(app).get('/test').set('x-api-key', key);
-          }
+      for (let i = 0; i < limit; i++) {
+        await request(app).get('/test').set('x-api-key', key);
+      }
 
-          // The (limit+1)th request must be 429
-          const res = await request(app).get('/test').set('x-api-key', key);
+      const res = await request(app).get('/test').set('x-api-key', key);
+      expect(res.status).toBe(429);
+      expect(res.headers['retry-after']).toBeTruthy();
+      expect(res.headers['ratelimit-limit']).toBeTruthy();
+      expect(res.headers['ratelimit-remaining']).toBeTruthy();
+      expect(res.headers['ratelimit-reset']).toBeTruthy();
 
-          if (res.status !== 429) return false;
-
-          // Required headers
-          if (!res.headers['retry-after']) return false;
-          if (!res.headers['ratelimit-limit']) return false;
-          if (!res.headers['ratelimit-remaining']) return false;
-          if (!res.headers['ratelimit-reset']) return false;
-
-          // Required body fields
-          const body = res.body as Record<string, unknown>;
-          if (!body.error) return false;
-          if (body.status !== 429) return false;
-          if (!body.message) return false;
-          if (typeof body.retryAfter !== 'number') return false;
-
-          return true;
-        }
-      ),
-      { numRuns: 10 } // keep fast; each run makes limit+1 HTTP requests
-    );
+      const body = res.body as Record<string, unknown>;
+      expect(body.error).toBeTruthy();
+      expect(body.status).toBe(429);
+      expect(body.message).toBeTruthy();
+      expect(typeof body.retryAfter).toBe('number');
+    }
   });
 });
 
@@ -72,26 +68,20 @@ describe('Property 5: Requests beyond the limit receive 429 with required header
 // Feature: redis-rate-limiting, Property 6: 200 includes rate-limit headers
 describe('Property 6: Requests within the limit include rate-limit headers', () => {
   it('holds for randomly generated request counts within limit', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.integer({ min: 1, max: 10 }),
-        async (count) => {
-          const limit = count + 5; // ensure we stay within limit
-          const app = buildApp(limit);
-          const key = `wallet-p6-${count}-${Math.random()}`;
+    for (let run = 0; run < 10; run++) {
+      const count = randomInt(1, 10);
+      const limit = count + 5;
+      const app = buildApp(limit);
+      const key = `wallet-p6-${count}-${run}-${Date.now()}`;
 
-          for (let i = 0; i < count; i++) {
-            const res = await request(app).get('/test').set('x-api-key', key);
-            if (res.status !== 200) return false;
-            if (!res.headers['ratelimit-limit']) return false;
-            if (!res.headers['ratelimit-remaining']) return false;
-            if (!res.headers['ratelimit-reset']) return false;
-          }
-          return true;
-        }
-      ),
-      { numRuns: 10 }
-    );
+      for (let i = 0; i < count; i++) {
+        const res = await request(app).get('/test').set('x-api-key', key);
+        expect(res.status).toBe(200);
+        expect(res.headers['ratelimit-limit']).toBeTruthy();
+        expect(res.headers['ratelimit-remaining']).toBeTruthy();
+        expect(res.headers['ratelimit-reset']).toBeTruthy();
+      }
+    }
   });
 });
 
@@ -100,23 +90,18 @@ describe('Property 6: Requests within the limit include rate-limit headers', () 
 // Feature: redis-rate-limiting, Property 7: Counter initialises to 1
 describe('Property 7: Counter initialises to 1 on first request in a window', () => {
   it('RateLimit-Remaining equals limit-1 after first request', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.integer({ min: 2, max: 30 }),
-        fc.string({ minLength: 5, maxLength: 20 }),
-        async (limit, walletSuffix) => {
-          const app = buildApp(limit);
-          const key = `wallet-p7-${walletSuffix}-${Math.random()}`;
+    for (let run = 0; run < 10; run++) {
+      const limit = randomInt(2, 30);
+      const walletSuffix = randomAlphaNumeric(randomInt(5, 20));
+      const app = buildApp(limit);
+      const key = `wallet-p7-${walletSuffix}-${run}`;
 
-          const res = await request(app).get('/test').set('x-api-key', key);
-          if (res.status !== 200) return false;
+      const res = await request(app).get('/test').set('x-api-key', key);
+      expect(res.status).toBe(200);
 
-          const remaining = parseInt(res.headers['ratelimit-remaining'] as string, 10);
-          return remaining === limit - 1;
-        }
-      ),
-      { numRuns: 10 }
-    );
+      const remaining = parseInt(res.headers['ratelimit-remaining'] as string, 10);
+      expect(remaining).toBe(limit - 1);
+    }
   });
 });
 
@@ -132,46 +117,41 @@ describe('Property 8: Rate-limit log entries contain required fields without exp
   });
 
   it('log contains required fields and masks wallet in production', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.string({ minLength: 10, maxLength: 40 }),
-        async (walletAddress) => {
-          process.env = { ...originalEnv, NODE_ENV: 'production' };
-          jest.resetModules();
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          const { createLimiter } = require('../rateLimiter');
+    for (let run = 0; run < 10; run++) {
+      const walletAddress = randomAlphaNumeric(randomInt(10, 40));
 
-          const logEntries: Record<string, unknown>[] = [];
-          const consoleSpy = jest.spyOn(console, 'log').mockImplementation((msg: string) => {
-            try { logEntries.push(JSON.parse(msg)); } catch { /* ignore non-JSON */ }
-          });
+      process.env = { ...originalEnv, NODE_ENV: 'production' };
+      jest.resetModules();
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { createLimiter } = require('../rateLimiter');
 
-          const app = express();
-          app.use(express.json());
-          const limiter = createLimiter({ routePrefix: '/prop-p8', max: 1, windowMs: 60000 });
-          app.get('/test', limiter, (_req: Request, res: Response) => res.json({ ok: true }));
-
-          // First request succeeds, second triggers 429 log
-          await request(app).get('/test').set('x-wallet-address', walletAddress);
-          await request(app).get('/test').set('x-wallet-address', walletAddress);
-
-          consoleSpy.mockRestore();
-
-          const rateLimitedLog = logEntries.find((e) => e.event === 'rate_limited');
-          if (!rateLimitedLog) return false;
-
-          // Required fields present
-          if (!rateLimitedLog.path) return false;
-          if (rateLimitedLog.resetTime === undefined) return false;
-          if (!rateLimitedLog.key) return false;
-
-          // Full wallet address must NOT appear in log key in production
-          if (walletAddress.length > 8 && rateLimitedLog.key === walletAddress) return false;
-
-          return true;
+      const logEntries: Record<string, unknown>[] = [];
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation((msg: string) => {
+        try {
+          logEntries.push(JSON.parse(msg));
+        } catch {
+          // Ignore non-JSON log lines.
         }
-      ),
-      { numRuns: 10 }
-    );
+      });
+
+      const app = express();
+      app.use(express.json());
+      const limiter = createLimiter({ routePrefix: '/prop-p8', max: 1, windowMs: 60000 });
+      app.get('/test', limiter, (_req: Request, res: Response) => res.json({ ok: true }));
+
+      await request(app).get('/test').set('x-wallet-address', walletAddress);
+      await request(app).get('/test').set('x-wallet-address', walletAddress);
+
+      consoleSpy.mockRestore();
+
+      const rateLimitedLog = logEntries.find((e) => e.event === 'rate_limited');
+      expect(rateLimitedLog).toBeTruthy();
+      expect(rateLimitedLog?.path).toBeTruthy();
+      expect(rateLimitedLog?.resetTime).toBeDefined();
+      expect(rateLimitedLog?.key).toBeTruthy();
+      if (walletAddress.length > 8) {
+        expect(rateLimitedLog?.key).not.toBe(walletAddress);
+      }
+    }
   });
 });

@@ -302,7 +302,7 @@ describe('LatencyMonitoringService', () => {
       freshService.recordLatency(endpoint, 500);
 
       const metricsBefore = freshService.getDetailedMetrics();
-      const metricBefore = metricsBefore.find(m => m.endpoint === endpoint);
+      const metricBefore = metricsBefore.find((m: any) => m.endpoint === endpoint);
       expect(metricBefore?.currentP95).toBe(500);
       expect(metricBefore?.isBreaching).toBe(true);
 
@@ -310,7 +310,7 @@ describe('LatencyMonitoringService', () => {
       return new Promise<void>((resolve) => {
         setTimeout(() => {
           const metricsAfter = freshService.getDetailedMetrics();
-          const metricAfter = metricsAfter.find(m => m.endpoint === endpoint);
+          const metricAfter = metricsAfter.find((m: any) => m.endpoint === endpoint);
           // Stale data should be pruned, P95 should drop to 0
           expect(metricAfter?.currentP95).toBe(0);
           expect(metricAfter?.isBreaching).toBe(false);
@@ -337,7 +337,7 @@ describe('LatencyMonitoringService', () => {
           freshService.recordLatency(endpoint, 100);
 
           const metrics = freshService.getDetailedMetrics();
-          const metric = metrics.find(m => m.endpoint === endpoint);
+          const metric = metrics.find((m: any) => m.endpoint === endpoint);
           // Only the fresh data point should count
           expect(metric?.dataPoints).toBe(1);
           expect(metric?.currentP95).toBe(100);
