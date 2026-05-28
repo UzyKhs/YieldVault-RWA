@@ -7,6 +7,8 @@ export type ValidationRule<TValues extends object> = {
   required?: boolean | string;
   min?: number;
   max?: number;
+  minVal?: number;
+  maxVal?: number;
   pattern?: RegExp;
   custom?: (
     value: string,
@@ -16,6 +18,8 @@ export type ValidationRule<TValues extends object> = {
     required?: string;
     min?: string;
     max?: string;
+    minVal?: string;
+    maxVal?: string;
     pattern?: string;
   };
 };
@@ -74,6 +78,25 @@ export function validate<TValues extends object>(
       errors[field] =
         rule.messages?.max ?? `Must be at most ${rule.max} characters.`;
       return;
+    }
+
+    const numValue = Number(value);
+    const isNumeric = !isNaN(numValue) && value.length > 0;
+
+    if (rule.minVal !== undefined) {
+      if (!isNumeric || numValue < rule.minVal) {
+        errors[field] =
+          rule.messages?.minVal ?? `Value must be at least ${rule.minVal}.`;
+        return;
+      }
+    }
+
+    if (rule.maxVal !== undefined) {
+      if (!isNumeric || numValue > rule.maxVal) {
+        errors[field] =
+          rule.messages?.maxVal ?? `Value must be at most ${rule.maxVal}.`;
+        return;
+      }
     }
 
     if (rule.pattern && !rule.pattern.test(value)) {

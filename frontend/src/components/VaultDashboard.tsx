@@ -11,7 +11,7 @@ import {
   TrendingUp,
   Wallet as WalletIcon,
 } from "./icons";
-import Skeleton, { DashboardCardSkeleton, SkeletonText } from "./Skeleton";
+import Skeleton, { DashboardCardSkeleton, SkeletonText, SkeletonCircle } from "./Skeleton";
 import { useDelayedLoading } from "../hooks/useDelayedLoading";
 import { useVault } from "../context/VaultContext";
 import ApiStatusBanner from "./ApiStatusBanner";
@@ -20,6 +20,9 @@ import VaultPerformanceChart from "./VaultPerformanceChart";
 import { useToast } from "../context/ToastContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import { FormField } from "../forms";
+import { isValidationError } from "../lib/api";
+import { useForm } from "../forms/useForm";
+import type { ValidationSchema } from "../forms/validate";
 import { useDepositMutation, useWithdrawMutation } from "../hooks/useVaultMutations";
 import { useTokenAllowance } from "../hooks/useTokenAllowance";
 import CopyButton from "./CopyButton";
@@ -27,8 +30,9 @@ import { copyTextToClipboard } from "../lib/clipboard";
 import { useFeeEstimate } from "../hooks/useFeeEstimate";
 import HelpIcon from "./ui/HelpIcon";
 import EmptyState from "./ui/EmptyState";
-import { useOfflineRetryCountdown } from "../hooks/useOfflineRetryCountdown";
-import confetti from "canvas-confetti";
+import { TransactionConfirmationModal } from "./TransactionConfirmationModal";
+import { useTranslation } from "../i18n";
+import { networkConfig } from "../config/network";
 
 /**
  * Valid transaction tabs in the vault dashboard.
@@ -87,10 +91,6 @@ interface VaultDashboardProps {
 }
 
 const MIN_DEPOSIT_AMOUNT = 1;
-const INITIAL_TOUCHED_STATE: Record<TransactionTab, boolean> = {
-  deposit: false,
-  withdraw: false,
-};
 
 const VaultCapWarning: React.FC<{ utilization: number; isReached: boolean }> = ({
   utilization,
@@ -143,42 +143,6 @@ const VaultCapWarning: React.FC<{ utilization: number; isReached: boolean }> = (
 };
 
 
-function getAmountValidationError(
-  actionType: TransactionTab,
-  rawAmount: string,
-  availableBalance: number,
-  isCapReached: boolean,
-): string | null {
-  if (!rawAmount.trim()) {
-    return "Amount is required.";
-  }
-
-  const value = Number(rawAmount);
-  if (Number.isNaN(value) || !Number.isFinite(value)) {
-    return "Enter a valid number.";
-  }
-
-  if (value <= 0) {
-    return "Amount must be greater than 0.";
-  }
-
-  if (actionType === "deposit" && value < MIN_DEPOSIT_AMOUNT) {
-    return `Minimum deposit is ${MIN_DEPOSIT_AMOUNT.toFixed(2)} USDC.`;
-  }
-
-  if (value > availableBalance) {
-    return actionType === "deposit"
-      ? "Deposit amount cannot exceed your available USDC balance."
-      : "The withdrawal amount exceeds your available USDC balance.";
-  }
-
-  if (actionType === "deposit" && isCapReached) {
-    return "Deposits are temporarily disabled because the vault is at capacity.";
-  }
-
-  return null;
-}
-
 
 const VaultDashboard: React.FC<VaultDashboardProps> = ({
   walletAddress,
@@ -199,8 +163,48 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
   const delayedLoading = useDelayedLoading(isLoading);
 
   const [activeTab, setActiveTab] = useState<TransactionTab>("deposit");
-  const [amount, setAmount] = useState("");
-  const [touched, setTouched] = useState<Record<TransactionTab, boolean>>(INITIAL_TOUCHED_STATE);
+  const availableBalance = walletAddress ? usdcBalance : 0;
+
+  const transactionSchema = React.useMemo<ValidationSchema<{ amount: string }>>(() => ({
+    amount: {
+      required: "Amount is required.",
+      custom: (value) => {
+        const num = Number(value);
+        if (isNaN(num) || !isFinite(num)) return "Enter a valid number.";
+        if (num <= 0) return "Amount must be greater than 0.";
+
+        if (activeTab === "deposit") {
+          if (num < MIN_DEPOSIT_AMOUNT) {
+            return `Minimum deposit is ${MIN_DEPOSIT_AMOUNT.toFixed(2)} USDC.`;
+          }
+          if (isCapReached) {
+            return "Deposits are temporarily disabled because the vault is at capacity.";
+          }
+          if (num > availableBalance) {
+            return "Deposit amount cannot exceed your available USDC balance.";
+          }
+        } else {
+          if (num > availableBalance) {
+            return "The withdrawal amount exceeds your available USDC balance.";
+          }
+        }
+        return undefined;
+      }
+    }
+  }), [activeTab, availableBalance, isCapReached]);
+
+  const {
+    values,
+    errors,
+    touched,
+    handleChange,
+    handleBlur,
+    setValues,
+    setFieldError
+  } = useForm({ amount: "" }, transactionSchema);
+
+  const amount = values.amount;
+
   // Wizard state
   const [currentStep, setCurrentStep] = useState<TransactionStep>("amount");
   const [transactionResult, setTransactionResult] = useState<{
@@ -221,13 +225,12 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
     }
 
     setActiveTab("deposit");
-    setTouched(INITIAL_TOUCHED_STATE);
 
     const parsedAmount = amountParam === null ? Number.NaN : Number(amountParam);
     if (Number.isFinite(parsedAmount) && parsedAmount > 0) {
-      setAmount(parsedAmount.toString());
+      setValues({ amount: parsedAmount.toString() });
     } else {
-      setAmount("");
+      setValues({ amount: "" });
     }
 
     // Remove only deep-link query params while preserving any unrelated URL state.
@@ -255,25 +258,17 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
   );
 
   const resetWizard = () => {
-    setAmount("");
-    setTouched(INITIAL_TOUCHED_STATE);
+    setValues({ amount: "" });
     setCurrentStep("amount");
     setTransactionResult(null);
   };
 
   const goToReview = () => {
-    const validationError = getAmountValidationError(
-      activeTab,
-      amount,
-      availableBalance,
-      isCapReached,
-    );
-
-    if (validationError) {
-      setTouched((previous) => ({ ...previous, [activeTab]: true }));
+    if (errors.amount || !amount) {
+      setFieldError("amount", errors.amount || "Amount is required.");
       toast.warning({
         title: "Enter a valid amount",
-        description: validationError,
+        description: errors.amount || "Amount is required.",
       });
       return;
     }
@@ -282,15 +277,26 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
   };
 
   useEffect(() => {
-    const handleTrigger = () => {
+    const handleDeposit = () => {
       setActiveTab("deposit");
       setTimeout(() => {
         const input = document.querySelector(".input-field") as HTMLInputElement | null;
         if (input) input.focus();
       }, 0);
     };
-    window.addEventListener("TRIGGER_DEPOSIT", handleTrigger);
-    return () => window.removeEventListener("TRIGGER_DEPOSIT", handleTrigger);
+    const handleWithdraw = () => {
+      setActiveTab("withdraw");
+      setTimeout(() => {
+        const input = document.querySelector(".input-field") as HTMLInputElement | null;
+        if (input) input.focus();
+      }, 0);
+    };
+    window.addEventListener("TRIGGER_DEPOSIT", handleDeposit);
+    window.addEventListener("TRIGGER_WITHDRAW", handleWithdraw);
+    return () => {
+      window.removeEventListener("TRIGGER_DEPOSIT", handleDeposit);
+      window.removeEventListener("TRIGGER_WITHDRAW", handleWithdraw);
+    };
   }, []);
 
   const isProcessing = depositMutation.isPending
@@ -300,17 +306,11 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
       : null;
   const isBusy = isProcessing !== null;
 
-  const availableBalance = walletAddress ? usdcBalance : 0;
   const strategy = summary.strategy;
   const enteredAmount = Number(amount);
-  const activeAmountError = getAmountValidationError(
-    activeTab,
-    amount,
-    availableBalance,
-    isCapReached,
-  );
-  const isValidAmount = !activeAmountError;
-  const showInlineError = touched[activeTab] && Boolean(activeAmountError);
+  const activeAmountError = errors.amount;
+  const isValidAmount = !activeAmountError && amount.length > 0;
+  const showInlineError = touched.amount && Boolean(activeAmountError);
   const managementFeeBps = 35;
   const estimatedFee = isValidAmount
     ? (enteredAmount * managementFeeBps) / 10_000
@@ -322,6 +322,7 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
     !walletAddress ||
     isBusy ||
     Boolean(activeAmountError) ||
+    !amount ||
     (activeTab === "deposit" && isCapReached);
 
 
@@ -385,6 +386,15 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
             : `${value.toFixed(2)} USDC has been withdrawn from the vault.`,
       });
     } catch (err: unknown) {
+      if (isValidationError(err)) {
+        err.details.forEach((detail) => {
+          if (detail.field === "amount") {
+            setFieldError("amount", detail.message);
+          }
+        });
+        setCurrentStep("amount");
+      }
+
       setTransactionResult({
         success: false,
         message:
@@ -414,18 +424,26 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
           <div className="vault-stats-header flex justify-between items-center" style={{ marginBottom: "24px" }}>
             <div>
               <h2 style={{ fontSize: "1.5rem", marginBottom: "4px" }}>
-                Global RWA Yield Fund
+                {delayedLoading ? <SkeletonText width="240px" lineHeight="1.5rem" /> : "Global RWA Yield Fund"}
               </h2>
-              <span
-                className="tag"
-                style={{
-                  background: "rgba(255, 255, 255, 0.05)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                Tokens: USDC
-              </span>
-              <SharePriceDisplay />
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {delayedLoading ? (
+                  <SkeletonText width="100px" lineHeight="1.5rem" />
+                ) : (
+                  <>
+                    <span
+                      className="tag"
+                      style={{
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      Tokens: USDC
+                    </span>
+                    <SharePriceDisplay />
+                  </>
+                )}
+              </div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem", display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
@@ -485,8 +503,17 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
                 Underlying Asset
               </div>
               <div className="flex items-center gap-sm">
-                <ShieldCheck size={16} color="var(--accent-cyan)" />
-                <span style={{ fontSize: "1.1rem", fontWeight: 500 }}>{summary.assetLabel}</span>
+                {delayedLoading ? (
+                  <>
+                    <SkeletonCircle width={16} height={16} />
+                    <SkeletonText width="100px" lineHeight="1.1rem" />
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck size={16} color="var(--accent-cyan)" />
+                    <span style={{ fontSize: "1.1rem", fontWeight: 500 }}>{summary.assetLabel}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -659,8 +686,7 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
             defaultValue="deposit"
             onValueChange={(value) => {
               setActiveTab(value as TransactionTab);
-              setAmount("");
-              setTouched(INITIAL_TOUCHED_STATE);
+              setValues({ amount: "" });
             }}
           >
             {currentStep === "amount" && (
@@ -693,20 +719,16 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
 
                           <FormField
                             label={tab === "deposit" ? "Deposit amount" : "Withdrawal amount"}
-                            name={`${tab}-amount`}
+                            name="amount"
                             type="number"
                             step="any"
                             placeholder="0.00"
                             value={amount}
-                            onChange={(event) => {
-                              setAmount(event.target.value);
-                              setTouched((previous) => ({ ...previous, [tab]: true }));
-                            }}
-                            onBlur={() =>
-                              setTouched((previous) => ({ ...previous, [tab]: true }))
-                            }
+                            onChange={handleChange}
+                            onBlur={handleBlur}
                             disabled={isBusy || (tab === "deposit" && isCapReached)}
                             error={showInlineError ? activeAmountError ?? undefined : undefined}
+                            helperText={tab === "deposit" ? `Min: ${MIN_DEPOSIT_AMOUNT.toFixed(2)} USDC` : `Max: ${availableBalance.toFixed(2)} USDC`}
                           />
 
                           <div className="flex justify-between items-center" style={{ margin: "16px 0 24px" }}>
@@ -749,8 +771,7 @@ const VaultDashboard: React.FC<VaultDashboardProps> = ({
                               type="button"
                               className="btn-max"
                               onClick={() => {
-                                setAmount(availableBalance.toFixed(2));
-                                setTouched((previous) => ({ ...previous, [tab]: true }));
+                                setValues({ amount: availableBalance.toFixed(2) });
                               }}
                               disabled={
                                 !walletAddress ||

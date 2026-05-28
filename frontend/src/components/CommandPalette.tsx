@@ -78,6 +78,10 @@ const CommandPalette: React.FC = () => {
       } else if (e.key === 'Escape') {
         e.preventDefault();
         closePalette();
+      } else if (e.key === 'Tab') {
+        // Simple focus trap: the only focusable element is the input
+        e.preventDefault();
+        inputRef.current?.focus();
       }
     },
     [filtered, activeIndex, runItem, closePalette],

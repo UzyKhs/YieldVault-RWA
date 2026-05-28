@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 import { useNavigate } from 'react-router-dom';
 import { useKeyboardShortcuts, formatShortcut } from '../hooks/useKeyboardShortcuts';
 import type { ShortcutDefinition } from '../hooks/useKeyboardShortcuts';
+import { useTranslation } from '../i18n';
 
 interface KeyboardShortcutContextValue {
   shortcuts: ShortcutDefinition[];
@@ -18,10 +19,15 @@ const KeyboardShortcutContext = createContext<KeyboardShortcutContextValue | nul
 
 interface KeyboardShortcutProviderProps {
   children: React.ReactNode;
+  walletAddress: string | null;
 }
 
-export const KeyboardShortcutProvider: React.FC<KeyboardShortcutProviderProps> = ({ children }) => {
+export const KeyboardShortcutProvider: React.FC<KeyboardShortcutProviderProps> = ({ 
+  children,
+  walletAddress 
+}) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
@@ -42,67 +48,84 @@ export const KeyboardShortcutProvider: React.FC<KeyboardShortcutProviderProps> =
   }, []);
 
   const shortcuts = useMemo<ShortcutDefinition[]>(() => [
-    // ── Navigation (single-letter, Gmail/GitHub style) ──
+    // ── Navigation ──
     {
       key: 'g',
       action: () => navigate('/'),
-      description: 'Go to Vaults',
-      scope: 'Navigation'
+      description: t('commands.goToVaults'),
+      scope: t('commands.scopes.navigation')
     },
     {
       key: 'p',
       action: () => navigate('/portfolio'),
-      description: 'Go to Portfolio',
-      scope: 'Navigation'
+      description: t('commands.goToPortfolio'),
+      scope: t('commands.scopes.navigation')
     },
     {
       key: 'a',
       action: () => navigate('/analytics'),
-      description: 'Go to Analytics',
-      scope: 'Navigation'
+      description: t('commands.goToAnalytics'),
+      scope: t('commands.scopes.navigation')
     },
     {
-      key: 't',
+      key: 'h',
       action: () => navigate('/transactions'),
-      description: 'Go to Transactions',
-      scope: 'Navigation'
+      description: t('commands.goToHistory'),
+      scope: t('commands.scopes.navigation')
     },
-    // ── Actions (single-letter, no browser clashes) ──
+    // ── Actions ──
     {
       key: 'd',
       action: () => {
+        if (!walletAddress) {
+          window.dispatchEvent(new CustomEvent('TRIGGER_WALLET_CONNECT'));
+          return;
+        }
         navigate('/');
         setTimeout(() => window.dispatchEvent(new CustomEvent('TRIGGER_DEPOSIT')), 100);
       },
-      description: 'Open Deposit Form',
-      scope: 'Actions'
+      description: t('commands.deposit'),
+      scope: t('commands.scopes.actions')
     },
     {
       key: 'w',
+      action: () => {
+        if (!walletAddress) {
+          window.dispatchEvent(new CustomEvent('TRIGGER_WALLET_CONNECT'));
+          return;
+        }
+        navigate('/');
+        setTimeout(() => window.dispatchEvent(new CustomEvent('TRIGGER_WITHDRAW')), 100);
+      },
+      description: t('commands.withdraw'),
+      scope: t('commands.scopes.actions')
+    },
+    {
+      key: 'c',
       action: () => window.dispatchEvent(new CustomEvent('TRIGGER_WALLET_CONNECT')),
-      description: 'Connect Wallet',
-      scope: 'Actions'
+      description: t('commands.connectWallet'),
+      scope: t('commands.scopes.actions')
     },
     {
       key: 's',
       action: () => navigate('/settings'),
-      description: 'Open Settings',
-      scope: 'Actions'
+      description: t('commands.settings'),
+      scope: t('commands.scopes.actions')
     },
     // ── General ──
     {
       key: '?',
       shiftKey: true,
       action: openHelpModal,
-      description: 'Show keyboard shortcuts',
-      scope: 'General'
+      description: t('commands.showShortcuts'),
+      scope: t('commands.scopes.general')
     },
     {
       key: 'k',
       metaKey: true,
       action: openPalette,
-      description: 'Open command palette',
-      scope: 'General'
+      description: t('commands.openPalette'),
+      scope: t('commands.scopes.general')
     },
     {
       key: 'Escape',
@@ -110,10 +133,10 @@ export const KeyboardShortcutProvider: React.FC<KeyboardShortcutProviderProps> =
         closePalette();
         closeHelpModal();
       },
-      description: 'Close modal',
-      scope: 'General'
+      description: t('commands.closeModal'),
+      scope: t('commands.scopes.general')
     }
-  ], [navigate, openHelpModal, closeHelpModal, openPalette, closePalette]);
+  ], [navigate, openHelpModal, closeHelpModal, openPalette, closePalette, walletAddress, t]);
 
   useKeyboardShortcuts(shortcuts, true);
 

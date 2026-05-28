@@ -28,6 +28,8 @@ import { useTransactionHistory } from "../hooks/useTransactionData";
 import { getStellarExplorerUrl } from "../lib/security";
 import { networkConfig } from "../config/network";
 
+import { useDelayedLoading } from "../hooks/useDelayedLoading";
+
 interface TransactionHistoryProps {
   walletAddress: string | null;
 }
@@ -160,6 +162,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   walletAddress,
 }) => {
   const { data: queryTransactions, isLoading, error: queryError } = useTransactionHistory(walletAddress);
+  const delayedLoading = useDelayedLoading(isLoading);
   const transactions = queryTransactions ?? [];
 
   const error = queryError 
@@ -291,7 +294,14 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
   // Reset visible count when filters/search/sort change
   useEffect(() => {
     setVisibleCount(INFINITE_SCROLL_BATCH_SIZE);
-  }, [state.search, state.sortBy, state.sortDirection, txType, dateFrom, dateTo]);
+  }, [
+    state.search,
+    state.sortBy,
+    state.sortDirection,
+    filters.types,
+    filters.dateFrom,
+    filters.dateTo,
+  ]);
 
   // Handle loading more items for infinite scroll
   const handleLoadMore = useCallback(() => {
@@ -533,24 +543,14 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
               className="text-body-sm"
               style={{ color: "var(--text-secondary)", marginBottom: "16px" }}
             >
-              {isLoading
-                ? "Loading transactions..."
+              {delayedLoading
+                ? <SkeletonText width="180px" />
                 : viewMode === "infinite"
                   ? `Showing ${infiniteScrollRows.length} of ${sortedRows.length} transactions`
                   : `${totalItems} transactions found`}
             </div>
 
-            {isLoading ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "48px",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                Loading transactions...
-              </div>
-            ) : viewMode === "infinite" ? (
+            {viewMode === "infinite" ? (
               /* Infinite Scroll View */
               <div className="infinite-scroll-container">
                 <DataTable
@@ -559,7 +559,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                   rows={displayRows}
                   rowKey={(row) => row.id}
                   emptyMessage={emptyMessage}
-                  isLoading={isLoading}
+                  isLoading={delayedLoading}
                   skeletonRows={state.pageSize}
                   sortBy={state.sortBy}
                   sortDirection={state.sortDirection}
@@ -616,7 +616,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
                 rows={displayRows}
                 rowKey={(row) => row.id}
                 emptyMessage={emptyMessage}
-                isLoading={isLoading}
+                isLoading={delayedLoading}
                 skeletonRows={state.pageSize}
                 sortBy={state.sortBy}
                 sortDirection={state.sortDirection}

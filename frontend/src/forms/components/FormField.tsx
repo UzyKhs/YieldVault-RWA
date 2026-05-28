@@ -5,12 +5,14 @@ export interface FormFieldProps
   label: string;
   name: string;
   error?: string;
+  helperText?: string;
 }
 
 const FormField: React.FC<FormFieldProps> = ({
   label,
   name,
   error,
+  helperText,
   disabled,
   type = "text",
   id,
@@ -18,6 +20,7 @@ const FormField: React.FC<FormFieldProps> = ({
 }) => {
   const inputId = id ?? name;
   const errorId = `${name}-error`;
+  const helperId = `${name}-helper`;
 
   return (
     <div className="form-control">
@@ -31,12 +34,20 @@ const FormField: React.FC<FormFieldProps> = ({
           className={`input-field ${props.className ?? ""}`.trim()}
           disabled={disabled}
           aria-invalid={error ? "true" : undefined}
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={
+            [error ? errorId : undefined, helperText ? helperId : undefined]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
         />
       </div>
       {error ? (
         <span id={errorId} className="form-error" role="alert">
           {error}
+        </span>
+      ) : helperText ? (
+        <span id={helperId} className="form-helper">
+          {helperText}
         </span>
       ) : null}
     </div>

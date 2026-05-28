@@ -94,5 +94,6 @@ export function useForm<T extends object>(
     handleBlur,
     handleSubmit,
     setFieldError,
+    setValues,
   };
 }

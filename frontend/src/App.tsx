@@ -83,7 +83,7 @@ function AppContent() {
 
   return (
     <PreferencesProvider walletAddress={walletAddress}>
-      <KeyboardShortcutProvider>
+      <KeyboardShortcutProvider walletAddress={walletAddress}>
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>

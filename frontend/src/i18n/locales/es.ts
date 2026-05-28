@@ -130,4 +130,22 @@ export const es = {
   common: {
     dismiss: "Descartar",
   },
+  commands: {
+    goToVaults: "Ir a Bóvedas",
+    goToPortfolio: "Ir a Portafolio",
+    goToAnalytics: "Ir a Analítica",
+    goToHistory: "Ir a Historial",
+    deposit: "Depositar USDC",
+    withdraw: "Retirar USDC",
+    connectWallet: "Conectar billetera",
+    settings: "Abrir configuración",
+    showShortcuts: "Mostrar atajos de teclado",
+    openPalette: "Abrir paleta de comandos",
+    closeModal: "Cerrar modal",
+    scopes: {
+      navigation: "Navegación",
+      actions: "Acciones",
+      general: "General"
+    }
+  },
 } as const;
