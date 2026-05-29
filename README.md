@@ -82,6 +82,44 @@ npm run docs:api
 
 See `docs/api/README.md` for output locations.
 
+## Webhook Integration
+
+YieldVault emits cryptographically-signed events for all critical vault operations. Off-chain services can consume these events to track deposits, withdrawals, fee changes, and other protocol activity.
+
+For a complete guide on consuming YieldVault events, see **[Webhook Integration Guide](./docs/WEBHOOK_INTEGRATION.md)**.
+
+### Quick Start
+
+**Listen for vault events (TypeScript):**
+
+```typescript
+import { Server } from "@stellar/stellar-sdk";
+
+const server = new Server("https://soroban-testnet.stellar.org");
+const contractId = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
+
+const response = await server.getEvents({
+  filters: [{ type: "contract", contractIds: [contractId] }],
+  startLedger: 0,
+  limit: 100,
+});
+
+for (const event of response.events) {
+  console.log(`Event: ${event.topic[1]}`, event.value);
+}
+```
+
+**Events emitted:**
+- `deposit` — User deposits USDC and receives shares
+- `pndwdraw` — Large withdrawal initiated (24-hour timelock)
+- `withdraw` — Withdrawal completes
+- `feechg` — Protocol fee updated
+- `mindepchg` — Minimum deposit threshold updated
+
+**Complete examples:**
+- [TypeScript Consumer](./docs/examples/webhook_consumer.ts)
+- [Python Consumer](./docs/examples/webhook_consumer.py)
+
 ## Disaster Recovery
 
 YieldVault has comprehensive disaster recovery procedures to ensure system resilience:

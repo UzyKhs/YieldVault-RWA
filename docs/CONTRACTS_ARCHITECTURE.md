@@ -459,7 +459,75 @@ See `contracts/vault/DEPLOYMENT.md` for step-by-step deployment procedures.
 
 ---
 
-## 9. Known Limitations & Future Work
+## 9. Events & Webhooks
+
+### Event Emissions
+
+YieldVault emits cryptographically-signed events for all critical operations. These events are published to the Stellar blockchain and can be consumed by off-chain indexers, backend services, and user notification systems.
+
+#### Event Catalog
+
+| Event | Emitted By | When | Topics | Data |
+|-------|-----------|------|--------|------|
+| `deposit` | `deposit()` | User deposits USDC | contract_id | (amount, shares_minted) |
+| `pndwdraw` | `withdraw()` | Large withdrawal initiated (timelocked) | contract_id, user | (shares, unlock_timestamp) |
+| `withdraw` | `withdraw()` / `execute_withdrawal()` | Withdrawal completes | contract_id, user | (assets_returned, shares_burned) |
+| `feechg` | `set_fee_bps()` | Protocol fee updated | contract_id | (old_bps, new_bps) |
+| `mindepchg` | `set_min_deposit()` | Minimum deposit updated | contract_id | (old_min, new_min) |
+
+#### Event Details
+
+**`deposit` Event**
+- **Emitted:** When user successfully deposits USDC
+- **Data:** `(amount: i128, shares_minted: i128)`
+- **Use Case:** Track user deposits, update analytics, trigger notifications
+
+**`pndwdraw` Event**
+- **Emitted:** When withdrawal exceeds `large_withdrawal_threshold` (24-hour timelock)
+- **Data:** `(shares: i128, unlock_timestamp: u64)`
+- **Topics:** Includes user address for filtering
+- **Use Case:** Notify user of pending withdrawal, track timelock expiry
+
+**`withdraw` Event**
+- **Emitted:** When withdrawal completes (either immediately or after timelock)
+- **Data:** `(assets_returned: i128, shares_burned: i128)`
+- **Topics:** Includes user address for filtering
+- **Use Case:** Track user withdrawals, update balances, trigger notifications
+
+**`feechg` Event**
+- **Emitted:** When admin updates protocol fee
+- **Data:** `(old_bps: i128, new_bps: i128)`
+- **Use Case:** Update fee configuration, alert on significant changes
+
+**`mindepchg` Event**
+- **Emitted:** When admin updates minimum deposit threshold
+- **Data:** `(old_min: i128, new_min: i128)`
+- **Use Case:** Update deposit validation, alert on threshold changes
+
+### Webhook Consumer Integration
+
+For a complete guide on consuming YieldVault events, see **[Webhook Integration Guide](./WEBHOOK_INTEGRATION.md)**.
+
+The guide includes:
+- **Event Catalog** — Detailed documentation of all events
+- **Setup Instructions** — Step-by-step consumer setup in TypeScript, Python, and Rust
+- **Signature Verification** — How to verify event authenticity
+- **Retry Strategies** — Handling RPC unavailability and missed events
+- **Error Handling** — Common failure scenarios and recovery
+- **Security Best Practices** — Protecting against replayed/spoofed events
+- **Complete Examples** — Production-ready consumer implementations
+
+### Event Reliability
+
+- **Immutability:** Events are immutable once published to the ledger
+- **Ordering:** Events are always returned in ledger order
+- **Deduplication:** Use cursor-based pagination to avoid missing events
+- **Verification:** Verify event source by checking contract address and ledger sequence
+- **Replay Protection:** Detect replayed events by hashing event data
+
+---
+
+## 10. Known Limitations & Future Work
 
 ### Current Limitations
 
