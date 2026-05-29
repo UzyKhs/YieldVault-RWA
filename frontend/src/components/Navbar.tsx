@@ -5,6 +5,7 @@ import WalletConnect from "./WalletConnect";
 import type { DisconnectReason } from "./WalletConnect";
 import ThemeToggle from "./ThemeToggle";
 import TvlTicker from "./TvlTicker";
+import HealthStatusIndicator from "./HealthStatusIndicator";
 import { Layers } from "./icons";
 import { useTranslation } from "../i18n";
 import { networkConfig } from "../config/network";
@@ -151,6 +152,8 @@ const Navbar: FC<NavbarProps> = ({
         {/* RIGHT */}
         <div className="flex items-center gap-md">
           <TvlTicker />
+
+          <HealthStatusIndicator />
 
           <div className="flex items-center gap-sm nav-desktop-links">
             {walletAddress && (
