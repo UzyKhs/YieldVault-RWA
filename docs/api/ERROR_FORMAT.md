@@ -4,6 +4,9 @@ This document defines the **canonical error shapes** returned by the YieldVault
 API client layer. All errors — whether from the network, an HTTP status, or
 client-side request validation — conform to one of the two shapes below.
 
+For a full list of REST, Soroban, and remediation guidance for integrators, see
+[ERROR_CODE_CATALOG.md](./ERROR_CODE_CATALOG.md).
+
 ---
 
 ## 1. `ApiError` — Network & HTTP errors
@@ -35,6 +38,7 @@ interface ApiErrorShape {
 | `NETWORK_ERROR`    | `fetch()` throws a `TypeError` (no connectivity, DNS)  | `true`      |
 | `TIMEOUT`          | Request exceeds the configured timeout                  | `true`      |
 | `ABORTED`          | Caller aborted the request via `AbortController`        | `false`     |
+| `AUTH_ERROR`       | Server returned HTTP `401` or `403`                     | `false`     |
 | `HTTP_ERROR`       | Server returned a non-2xx status code                   | see below   |
 | `INVALID_RESPONSE` | Response body could not be parsed (malformed JSON)      | `false`     |
 | `UNKNOWN_ERROR`    | Any other unclassified error                            | `false`     |

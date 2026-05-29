@@ -72,7 +72,14 @@ All errors follow a consistent format:
 }
 ```
 
-See [ERROR_FORMAT.md](./ERROR_FORMAT.md) for detailed error documentation.
+| Document | Purpose |
+|----------|---------|
+| [ERROR_FORMAT.md](./ERROR_FORMAT.md) | Frontend `ApiError` / `ValidationError` shapes and handling patterns |
+| [ERROR_CODE_CATALOG.md](./ERROR_CODE_CATALOG.md) | Full error code list, HTTP/Soroban codes, and integrator remediation |
+
+See [ERROR_CODE_CATALOG.md](./ERROR_CODE_CATALOG.md) when building SDKs or
+support runbooks; use [ERROR_FORMAT.md](./ERROR_FORMAT.md) when working in the
+React client.
 
 ## Generate docs locally
 
