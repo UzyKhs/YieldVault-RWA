@@ -1,8 +1,8 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{testutils::{Address as _, BytesN as _}, Address, Env, BytesN, String as SorobanString};
-use crate::upgrade::{IMPLEMENTATION_SLOT, ADMIN_SLOT, is_initialized, get_admin};
+use soroban_sdk::{testutils::Address as _, Address, Env, String as SorobanString};
+use crate::upgrade::{is_initialized, get_admin};
 
 #[test]
 fn test_proxy_initialization_guard() {

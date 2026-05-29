@@ -2,37 +2,8 @@
 //!
 //! This module defines the authorization requirements for all vault operations.
 //!
-//! # Permission Matrix
-//!
-//! | Function | Required Role | Note |
-//! |----------|---------------|------|
-//! | `initialize` | None (first call) | Can only be called once, sets admin |
-//! | `set_strategy` | Admin | Configure active strategy |
-//! | `pause` | Admin | Pause vault |
-//! | `unpause` | Admin | Unpause vault |
-//! | `configure_korean_strategy` | Admin | Configure Korean debt strategy |
-//! | `accrue_korean_debt_yield` | Admin | Harvest yield from Korean strategy |
-//! | `set_dao_threshold` | Admin | Update governance threshold |
-//! | `add_shipment` | Admin | Add RWA shipment |
-//! | `update_shipment_status` | Admin | Update shipment status |
-//! | `accrue_yield` | Admin | Artificially accrue yield |
-//! | `invest` | Admin | Move funds to strategy |
-//! | `divest` | Admin (or internal) | Recall funds from strategy |
-//! | `create_strategy_proposal` | Proposer (signed) | Create governance proposal |
-//! | `vote_on_proposal` | Voter (signed) | Vote on proposal |
-//! | `execute_strategy_proposal` | Public | Execute approved proposal |
-//! | `report_benji_yield` | Configured Strategy | Report yield from BENJI |
-//! | `deposit` | User (signed) | Deposit underlying tokens |
-//! | `withdraw` | User (signed) | Withdraw vault shares |
-//! | `balance` | Public | Query user share balance |
-//! | `token` | Public | Query underlying token address |
-//! | `total_shares` | Public | Query total vault shares |
-//! | `total_assets` | Public | Query total vault assets |
-//! | `strategy` | Public | Query active strategy address |
-//! | `is_paused` | Public | Query pause status |
-//! | `shipment_ids_by_status` | Public | Query shipments by status |
-//! | `calculate_shares` | Public | Calculate shares for amount |
-//! | `calculate_assets` | Public | Calculate assets for shares |
+//! See [`docs/CONTRACTS_ARCHITECTURE.md`](../../docs/CONTRACTS_ARCHITECTURE.md) for the full
+//! permission matrix and security model.
 
 use soroban_sdk::Address;
 

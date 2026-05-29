@@ -3,6 +3,8 @@ use soroban_sdk::{contracttype, Address, BytesN, Env};
 /// Storage keys for the Proxy's unstructured storage.
 /// We use hashed slots to avoid collisions with the implementation's storage.
 /// EIP-1967 style slots for WASM.
+///
+/// See [`docs/CONTRACTS_ARCHITECTURE.md`](../../docs/CONTRACTS_ARCHITECTURE.md) for details.
 #[contracttype]
 pub enum ProxyDataKey {
     /// keccak256("contract.proxy.admin") - 1

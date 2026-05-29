@@ -1,16 +1,74 @@
 #![no_std]
+//! # YieldVault - Stellar RWA Smart Contract
+//!
+//! A decentralized vault protocol for real-world assets (RWAs) on Stellar's Soroban.
+//!
+//! ## Overview
+//!
+//! YieldVault implements an ERC-4626-style vault with:
+//! - Fractional share minting (`yvUSDC`) for deposits
+//! - Multi-strategy support (BENJI, Korean Debt)
+//! - DAO governance for strategy selection
+//! - RWA shipment tracking for asset provenance
+//! - Protocol fees with treasury accumulation
+//! - Large-withdrawal timelocks for risk management
+//! - Per-user deposit caps and minimum deposit thresholds
+//! - Oracle price validation infrastructure
+//!
+//! ## Architecture
+//!
+//! See [`docs/CONTRACTS_ARCHITECTURE.md`](../docs/CONTRACTS_ARCHITECTURE.md) for:
+//! - Module responsibilities and interaction boundaries
+//! - Storage architecture and data flow
+//! - Security model and authorization boundaries
+//! - Developer guide and testing procedures
+//!
+//! ## Quick Start
+//!
+//! ```ignore
+//! // Initialize vault
+//! vault.initialize(&admin, &usdc_token);
+//!
+//! // User deposits USDC
+//! let shares = vault.deposit(&user, &100)?;
+//!
+//! // User withdraws shares
+//! let assets = vault.withdraw(&user, &shares)?;
+//!
+//! // Admin accrues yield
+//! vault.accrue_yield(&50);
+//! ```
+//!
+//! ## Testing
+//!
+//! Run all tests with `cargo test`. Key test suites:
+//! - `src/test.rs` — Core vault logic (50+ tests)
+//! - `src/fuzz_math.rs` — Math safety (10,000+ property tests)
+//! - `src/oracle_tests.rs` — Oracle validation (10+ tests)
+//! - `src/event_tests.rs` — Event emission (5+ tests)
+//! - `src/proxy_tests.rs` — Upgrade & storage (4+ tests)
+//!
+//! ## Deployment
+//!
+//! See `DEPLOYMENT.md` for step-by-step deployment to Stellar testnet/mainnet.
 
 #[cfg(not(target_arch = "wasm32"))]
 pub mod benji_strategy;
 pub mod external_calls;
 #[cfg(test)]
+mod event_tests;
+#[cfg(test)]
 mod fuzz_math;
+#[cfg(test)]
+mod oracle_tests;
 pub mod permissions;
 #[cfg(test)]
 pub mod proxy_tests;
 pub mod strategy;
 mod test;
 pub mod upgrade;
+
+pub mod oracle;
 
 use crate::strategy::StrategyClient;
 use crate::upgrade::{
@@ -25,6 +83,7 @@ const MAX_PAGE_SIZE: u32 = 50;
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Shipment status for RWA asset tracking.
 pub enum ShipmentStatus {
     Pending,
     InTransit,
@@ -34,6 +93,7 @@ pub enum ShipmentStatus {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Paginated response for shipment queries.
 pub struct ShipmentPage {
     pub shipment_ids: Vec<u64>,
     pub next_cursor: Option<u64>,
@@ -41,6 +101,7 @@ pub struct ShipmentPage {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Current vault state: total shares, total assets, and pause status.
 pub struct VaultState {
     pub total_shares: i128,
     pub total_assets: i128,
@@ -78,10 +139,15 @@ pub enum DataKey {
     PendingWithdrawal(Address),
     // Goal 3: min deposit
     MinDeposit,
+    // Oracle configuration
+    PriceOracle,
+    OracleEnabled,
+    OracleHeartbeat,
 }
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// DAO governance proposal for strategy selection.
 pub struct StrategyProposal {
     pub strategy: Address,
     pub yes_votes: i128,
@@ -91,6 +157,7 @@ pub struct StrategyProposal {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+/// Pending large withdrawal with 24-hour timelock.
 pub struct PendingWithdrawal {
     pub shares: i128,
     pub unlock_timestamp: u64,
@@ -99,23 +166,35 @@ pub struct PendingWithdrawal {
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[repr(u32)]
+/// Vault error codes.
 pub enum VaultError {
+    /// Contract has already been initialized.
     AlreadyInitialized = 1,
+    /// User does not have enough shares to withdraw.
     InsufficientShares = 2,
+    /// Amount is invalid (zero or negative).
     InvalidAmount = 3,
+    /// Vault is paused; deposits and withdrawals are blocked.
     ContractPaused = 4,
+    /// Deposit would exceed per-user cap.
     ExceedsUserCap = 5,
+    /// Deposit is below minimum deposit threshold.
     MinDepositNotMet = 6,
+    /// Large withdrawal timelock has not expired yet.
     TimelockNotExpired = 7,
+    /// No pending withdrawal exists for this user.
     NoPendingWithdrawal = 8,
 }
 
 #[contractclient(name = "KoreanDebtStrategyClient")]
+/// Client for Korean sovereign debt strategy contract.
 pub trait KoreanDebtStrategy {
+    /// Harvest yield from the Korean debt strategy.
     fn harvest_yield(env: Env) -> i128;
 }
 
 #[contract]
+/// YieldVault - Main vault contract for RWA yield farming on Stellar.
 pub struct YieldVault;
 
 #[contractimpl]
@@ -1056,6 +1135,60 @@ impl YieldVault {
             .instance()
             .get(&DataKey::MinDeposit)
             .unwrap_or(0)
+    }
+
+    // ── Oracle configuration ──────────────────────────────────────────────────
+
+    /// Set the price oracle contract address used for strategy value validation.
+    /// Only the Admin can call this.
+    pub fn set_price_oracle(env: Env, oracle: Address) {
+        let admin: Address = get_admin(&env).expect("Admin not set");
+        admin.require_auth();
+        env.storage()
+            .instance()
+            .set(&DataKey::PriceOracle, &oracle);
+    }
+
+    /// Returns the configured price oracle address, if any.
+    pub fn price_oracle(env: Env) -> Option<Address> {
+        env.storage().instance().get(&DataKey::PriceOracle)
+    }
+
+    /// Enable or disable oracle-based price validation for strategy values.
+    /// Only the Admin can call this.
+    pub fn set_oracle_enabled(env: Env, enabled: bool) {
+        let admin: Address = get_admin(&env).expect("Admin not set");
+        admin.require_auth();
+        env.storage()
+            .instance()
+            .set(&DataKey::OracleEnabled, &enabled);
+    }
+
+    /// Returns whether oracle price validation is currently enabled.
+    pub fn is_oracle_enabled(env: Env) -> bool {
+        env.storage()
+            .instance()
+            .get(&DataKey::OracleEnabled)
+            .unwrap_or(false)
+    }
+
+    /// Set the oracle heartbeat in seconds — the maximum age of a price feed
+    /// before it is considered stale. Defaults to 3600 (1 hour).
+    /// Only the Admin can call this.
+    pub fn set_oracle_heartbeat(env: Env, seconds: u64) {
+        let admin: Address = get_admin(&env).expect("Admin not set");
+        admin.require_auth();
+        env.storage()
+            .instance()
+            .set(&DataKey::OracleHeartbeat, &seconds);
+    }
+
+    /// Returns the current oracle heartbeat in seconds.
+    pub fn oracle_heartbeat(env: Env) -> u64 {
+        env.storage()
+            .instance()
+            .get(&DataKey::OracleHeartbeat)
+            .unwrap_or(crate::oracle::DEFAULT_HEARTBEAT_SECONDS)
     }
 
     pub fn report_benji_yield(env: Env, strategy: Address, amount: i128) {

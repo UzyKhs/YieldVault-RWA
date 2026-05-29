@@ -7,8 +7,24 @@ YieldVault is a decentralized vault platform built specifically for the **Stella
 This project is structured as a monorepo containing both the Stellar Soroban smart contracts and the frontend web application.
 
 - `/contracts/vault/`: Contains the Rust Soroban smart contract for handling the vault logic, fractional share minting (`yvUSDC`), scaling withdrawals, and simulated yield accrual.
+- `/contracts/mock-strategy/`: Contains test mock contracts for the Korean sovereign debt strategy and price oracle.
 - `/frontend/`: Contains the React + Vite frontend application, integrating `@stellar/freighter-api` for seamless user wallet connections and a premium UI to interact with the protocol.
 - `/docs/`: Contains the Product Requirements Document (PRD), Architecture Document, and tracked GitHub issues.
+
+## Architecture
+
+For a comprehensive overview of the smart contract architecture, module responsibilities, and interaction boundaries, see **[Contracts Architecture](./docs/CONTRACTS_ARCHITECTURE.md)**.
+
+### Contract Modules
+
+| Module | Purpose |
+|--------|---------|
+| **YieldVault** | Main vault contract: deposit/withdraw, yield accrual, strategy management, DAO governance, RWA shipment tracking |
+| **StrategyTrait** | Interface for pluggable strategy connectors |
+| **BenjiStrategy** | Test connector for BENJI fund token strategy |
+| **MockKoreanSovereignStrategy** | Test mock for Korean debt strategy with stepped yield curve |
+| **OracleValidator** | Standalone oracle price validation library (heartbeat, deviation, decimals) |
+| **MockPriceOracle** | Test mock oracle with configurable failure modes |
 
 ## Technology Stack
 - **Network**: Stellar (Testnet/Mainnet)

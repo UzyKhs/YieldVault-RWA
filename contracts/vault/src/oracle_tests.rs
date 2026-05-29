@@ -16,7 +16,7 @@ fn create_token_contract<'a>(e: &Env, admin: &Address) -> token::Client<'a> {
     token::Client::new(e, &token_address)
 }
 
-const SCALE: i128 = 1_000_000_000_000_000_000i128;
+const _SCALE: i128 = 1_000_000_000_000_000_000i128;
 
 #[test]
 fn test_oracle_price_data_creation() {

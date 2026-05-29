@@ -1,5 +1,11 @@
 use soroban_sdk::{contractclient, Address, Env};
 
+/// Strategy connector trait for pluggable yield strategies.
+///
+/// Implementations of this trait allow the vault to interact with different
+/// yield-generating strategies (e.g., BENJI fund tokens, Korean debt instruments).
+///
+/// See [`docs/CONTRACTS_ARCHITECTURE.md`](../../docs/CONTRACTS_ARCHITECTURE.md) for details.
 #[contractclient(name = "StrategyClient")]
 pub trait StrategyTrait {
     /// Deposits an amount of the underlying asset into the strategy.
