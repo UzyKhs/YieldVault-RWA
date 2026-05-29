@@ -218,7 +218,7 @@ describe("VaultDashboard", () => {
     const input = screen.getByPlaceholderText("0.00");
     expect(input).toHaveValue(1250.5);
 
-    fireEvent.click(screen.getByRole("tab", { name: "Withdraw" }));
+    fireEvent.click(screen.getByRole("button", { name: "Withdraw" }));
     fireEvent.click(maxButton);
     expect(input).toHaveValue(1250.5);
   });

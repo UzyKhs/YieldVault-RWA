@@ -162,7 +162,6 @@ export function TabsTrigger({ value, children, className = "" }: { value: string
   return (
     <button
       type="button"
-      role="tab"
       aria-selected={isActive}
       aria-controls={`panel-${value}`}
       id={`tab-${value}`}
