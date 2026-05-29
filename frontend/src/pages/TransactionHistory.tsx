@@ -203,6 +203,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
     setAmountMin,
     setAmountMax,
     clearAll,
+    setAsset,
   } = useTransactionFilters();
 
   // Keep useDataTableState's search in sync with the filter panel's search
@@ -280,6 +281,15 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
       },
     },
   );
+
+  // Available assets for the asset filter (unique, non-empty)
+  const assetOptions = React.useMemo(() => {
+    const set = new Set<string>();
+    for (const t of transactions) {
+      if (t.asset) set.add(t.asset);
+    }
+    return Array.from(set).sort();
+  }, [transactions]);
 
   // Infinite scroll: compute visible rows from sorted/filtered set
   const infiniteScrollRows = React.useMemo(() => {
@@ -441,6 +451,8 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({
             onSearchChange={setFilterSearch}
             onTypesChange={setTypes}
             onStatusesChange={setStatuses}
+            assets={assetOptions}
+            onAssetChange={setAsset}
             onDateFromChange={setDateFrom}
             onDateToChange={setDateTo}
             onAmountMinChange={setAmountMin}

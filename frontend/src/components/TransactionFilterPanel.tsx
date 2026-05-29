@@ -34,6 +34,9 @@ export interface TransactionFilterPanelProps {
   onSearchChange: (value: string) => void;
   onTypesChange: (types: TxType[]) => void;
   onStatusesChange: (statuses: TxStatus[]) => void;
+  /** Asset options to show in the asset select */
+  assets?: string[];
+  onAssetChange?: (value: string) => void;
   onDateFromChange: (value: string) => void;
   onDateToChange: (value: string) => void;
   onAmountMinChange: (value: string) => void;
@@ -187,6 +190,10 @@ export const TransactionFilterPanel: React.FC<TransactionFilterPanelProps> = ({
     onClearAll();
   }, [onClearAll]);
 
+  const handleResetField = (fn?: () => void) => {
+    if (fn) fn();
+  };
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -253,6 +260,14 @@ export const TransactionFilterPanel: React.FC<TransactionFilterPanelProps> = ({
                 className="tx-filter-field-label"
               >
                 Search
+                <button
+                  type="button"
+                  className="tx-filter-reset-small"
+                  onClick={() => handleResetField(() => onSearchChange(""))}
+                  aria-label="Reset search"
+                >
+                  Reset
+                </button>
               </label>
               <div className="tx-filter-input-wrapper">
                 <span className="tx-filter-input-icon" aria-hidden="true">🔍</span>
@@ -286,6 +301,14 @@ export const TransactionFilterPanel: React.FC<TransactionFilterPanelProps> = ({
                 className="tx-filter-field-label"
               >
                 From date
+                <button
+                  type="button"
+                  className="tx-filter-reset-small"
+                  onClick={() => handleResetField(() => onDateFromChange(""))}
+                  aria-label="Reset from date"
+                >
+                  Reset
+                </button>
               </label>
               <div className="tx-filter-input-wrapper">
                 <input
@@ -307,6 +330,14 @@ export const TransactionFilterPanel: React.FC<TransactionFilterPanelProps> = ({
                 className="tx-filter-field-label"
               >
                 To date
+                <button
+                  type="button"
+                  className="tx-filter-reset-small"
+                  onClick={() => handleResetField(() => onDateToChange(""))}
+                  aria-label="Reset to date"
+                >
+                  Reset
+                </button>
               </label>
               <div className="tx-filter-input-wrapper">
                 <input
@@ -324,12 +355,47 @@ export const TransactionFilterPanel: React.FC<TransactionFilterPanelProps> = ({
 
           {/* Row 2: Amount range */}
           <div className="tx-filter-row">
+            {/* Asset select */}
+            <div className="tx-filter-field">
+              <label htmlFor={`${uid}-asset`} className="tx-filter-field-label">
+                Asset
+                <button
+                  type="button"
+                  className="tx-filter-reset-small"
+                  onClick={() => handleResetField(() => onAssetChange?.("") )}
+                  aria-label="Reset asset"
+                >
+                  Reset
+                </button>
+              </label>
+              <div className="tx-filter-input-wrapper">
+                <select
+                  id={`${uid}-asset`}
+                  className="tx-filter-input"
+                  value={filters.asset}
+                  onChange={(e) => onAssetChange?.(e.target.value)}
+                >
+                  <option value="">All assets</option>
+                  {assets?.map((a) => (
+                    <option key={a} value={a}>{a}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
             <div className="tx-filter-field">
               <label
                 htmlFor={`${uid}-amount-min`}
                 className="tx-filter-field-label"
               >
                 Min amount
+                <button
+                  type="button"
+                  className="tx-filter-reset-small"
+                  onClick={() => handleResetField(() => onAmountMinChange(""))}
+                  aria-label="Reset min amount"
+                >
+                  Reset
+                </button>
               </label>
               <div className="tx-filter-input-wrapper">
                 <span className="tx-filter-input-prefix" aria-hidden="true">$</span>
@@ -353,6 +419,14 @@ export const TransactionFilterPanel: React.FC<TransactionFilterPanelProps> = ({
                 className="tx-filter-field-label"
               >
                 Max amount
+                <button
+                  type="button"
+                  className="tx-filter-reset-small"
+                  onClick={() => handleResetField(() => onAmountMaxChange(""))}
+                  aria-label="Reset max amount"
+                >
+                  Reset
+                </button>
               </label>
               <div className="tx-filter-input-wrapper">
                 <span className="tx-filter-input-prefix" aria-hidden="true">$</span>
@@ -390,6 +464,24 @@ export const TransactionFilterPanel: React.FC<TransactionFilterPanelProps> = ({
               colorMap={STATUS_COLORS}
               onChange={(v) => onStatusesChange(v as TxStatus[])}
             />
+            <div className="tx-filter-reset-group">
+              <button
+                type="button"
+                className="tx-filter-reset-btn"
+                onClick={() => onTypesChange([])}
+                aria-label="Reset types"
+              >
+                Reset types
+              </button>
+              <button
+                type="button"
+                className="tx-filter-reset-btn"
+                onClick={() => onStatusesChange([])}
+                aria-label="Reset statuses"
+              >
+                Reset statuses
+              </button>
+            </div>
           </div>
         </div>
       )}

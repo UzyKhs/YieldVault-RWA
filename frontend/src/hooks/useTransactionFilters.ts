@@ -18,6 +18,8 @@ export type TxStatus = (typeof VALID_TX_STATUSES)[number];
 export interface TransactionFilters {
   /** Free-text search (hash, description, counterparty) */
   search: string;
+  /** Asset filter (exact match), or empty string for all */
+  asset: string;
   /** Active type filters — empty array means "all" */
   types: TxType[];
   /** Active status filters — empty array means "all" */
@@ -44,6 +46,7 @@ const PARAM = {
   DATE_TO: "dateTo",
   AMOUNT_MIN: "amountMin",
   AMOUNT_MAX: "amountMax",
+  ASSET: "asset",
   PAGE: "page",
 } as const;
 
@@ -89,6 +92,7 @@ export function useTransactionFilters() {
   const filters = useMemo<TransactionFilters>(() => {
     return {
       search: searchParams.get(PARAM.SEARCH) ?? "",
+      asset: (searchParams.get(PARAM.ASSET) ?? "").trim(),
       types: parseCommaList(searchParams.get(PARAM.TYPES), VALID_TX_TYPES),
       statuses: parseCommaList(
         searchParams.get(PARAM.STATUSES),
@@ -105,6 +109,7 @@ export function useTransactionFilters() {
   const hasActiveFilters = useMemo(
     () =>
       Boolean(filters.search) ||
+      Boolean(filters.asset) ||
       filters.types.length > 0 ||
       filters.statuses.length > 0 ||
       Boolean(filters.dateFrom) ||
@@ -207,6 +212,17 @@ export function useTransactionFilters() {
     [updateParams],
   );
 
+  const setAsset = useCallback(
+    (value: string) => {
+      updateParams((next) => {
+        const v = (value ?? "").trim();
+        if (v) next.set(PARAM.ASSET, v);
+        else next.delete(PARAM.ASSET);
+      });
+    },
+    [updateParams],
+  );
+
   /** Strips all filter params and resets page to 1 */
   const clearAll = useCallback(() => {
     updateParams((next) => {
@@ -217,6 +233,7 @@ export function useTransactionFilters() {
       next.delete(PARAM.DATE_TO);
       next.delete(PARAM.AMOUNT_MIN);
       next.delete(PARAM.AMOUNT_MAX);
+      next.delete(PARAM.ASSET);
     });
   }, [updateParams]);
 
@@ -230,6 +247,7 @@ export function useTransactionFilters() {
     setDateTo,
     setAmountMin,
     setAmountMax,
+    setAsset,
     clearAll,
   };
 }
