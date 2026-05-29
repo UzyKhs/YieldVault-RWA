@@ -4,7 +4,14 @@ import {
   formatCurrency,
   formatCompactNumber,
   formatPercent,
+  formatDate,
+  resolveLocale,
+  resolveCurrency,
 } from "./formatters";
+
+function normalizeWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
 
 describe("formatters", () => {
   describe("formatNumber", () => {
@@ -32,6 +39,20 @@ describe("formatters", () => {
       expect(formatted).toContain("1,234.56");
       expect(formatted).not.toContain("$");
     });
+
+    it("formats currency using the requested locale and fixed decimals", () => {
+      const formatted = normalizeWhitespace(
+        formatCurrency(1234.5, {
+          locale: "de-DE",
+          currency: "EUR",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      );
+
+      expect(formatted).toContain("1.234,50");
+      expect(formatted).toContain("€");
+    });
   });
 
   describe("formatCompactNumber", () => {
@@ -55,6 +76,41 @@ describe("formatters", () => {
     it("formats decimal values as percent when specified", () => {
       expect(formatPercent(0.05, true)).toBe("5.00%");
       expect(formatPercent(0.05555, true)).toBe("5.56%");
+    });
+
+    it("supports fixed fraction digits for table and chart consistency", () => {
+      expect(
+        formatPercent(8.4, {
+          locale: "en-US",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      ).toBe("8.40%");
+    });
+  });
+
+  describe("locale fallbacks", () => {
+    it("falls back to the configured fallback locale when the preferred locale is invalid", () => {
+      expect(resolveLocale("invalid-locale-tag", "fr-FR")).toBe("fr-FR");
+    });
+
+    it("falls back to USD when the requested currency code is invalid", () => {
+      expect(resolveCurrency("INVALID", { locale: "en-US" })).toBe("USD");
+    });
+  });
+
+  describe("formatDate", () => {
+    it("formats dates with the requested locale", () => {
+      const formatted = formatDate("2026-03-25T00:00:00.000Z", {
+        locale: "de-DE",
+        formatOptions: { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" },
+      });
+
+      expect(formatted).toContain("25.");
+    });
+
+    it("returns an empty string for invalid dates", () => {
+      expect(formatDate("not-a-date", { month: "short", day: "numeric" }, "en-US")).toBe("");
     });
   });
 });

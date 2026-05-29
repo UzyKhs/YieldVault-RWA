@@ -144,6 +144,8 @@ export class LatencyMonitoringService {
       ['/health', EndpointType.READ],
       ['/ready', EndpointType.READ],
       ['/metrics', EndpointType.READ],
+      ['/admin/api-keys/audit-events', EndpointType.READ],
+      ['/admin/exports/jobs', EndpointType.READ],
       
       // Write endpoints (500ms SLO)
       ['/api/v1/vault/deposit', EndpointType.WRITE],
@@ -151,6 +153,9 @@ export class LatencyMonitoringService {
       ['/api/v1/vault/create', EndpointType.WRITE],
       ['/admin/cache/invalidate', EndpointType.WRITE],
       ['/admin/api-keys/register', EndpointType.WRITE],
+      ['/admin/api-keys/rotate', EndpointType.WRITE],
+      ['/admin/api-keys/revoke', EndpointType.WRITE],
+      ['/admin/exports/jobs/:id/verify', EndpointType.WRITE],
     ]);
 
     const sloConfig = this.getSLOConfig();

@@ -69,6 +69,38 @@ model AdminAuditLog {
   @@index([actor])
 }
 
+model ApiKeyAuditEvent {
+  id             String   @id @default(uuid())
+  actor          String
+  action         String
+  keyFingerprint String
+  createdAt      DateTime @default(now())
+
+  @@index([action])
+  @@index([createdAt])
+  @@index([keyFingerprint])
+}
+
+model ExportJob {
+  id                String   @id
+  format            String
+  fileName          String
+  contentType       String
+  checksum          String
+  checksumAlgorithm String
+  generatedBy       String
+  walletAddress     String?
+  rowCount          Int
+  filters           String
+  createdAt         DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([checksum])
+  @@index([generatedBy])
+  @@index([walletAddress])
+  @@index([format])
+}
+
 model EventCursor {
   id                Int      @id @default(1)
   lastLedgerSeq     Int

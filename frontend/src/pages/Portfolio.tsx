@@ -22,100 +22,17 @@ import HelpIcon from "../components/ui/HelpIcon";
 import { useUrlState } from "../hooks/useUrlState";
 import { useServerDataTable } from "../hooks/useServerDataTable";
 import { useToast } from "../context/ToastContext";
+import { usePreferencesContext } from "../context/PreferencesContext";
 import YieldBreakdownChart from "../components/YieldBreakdownChart";
 import { useReferralStats, useReferralLink } from "../hooks/useReferral";
 import ShareModal from "../components/ShareModal";
 import EmptyState from "../components/ui/EmptyState";
 import { useNavigate } from "react-router-dom";
-import { formatCurrency, formatNumber } from "../lib/formatters";
+import { formatCurrency, formatNumber, formatPercent } from "../lib/formatters";
 
 interface PortfolioProps {
   walletAddress: string | null;
 }
-
-
-const columns: DataTableColumn<PortfolioHolding>[] = [
-  {
-    id: "asset",
-    header: "Asset",
-    sortable: true,
-    width: "28%",
-    cell: (row) => (
-      <div>
-        <div style={{ fontWeight: 600 }}>{row.asset}</div>
-        <div style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-          {row.vaultName}
-        </div>
-        <div
-          className="copy-field"
-          style={{ marginTop: "8px", color: "var(--text-secondary)", fontSize: "0.78rem" }}
-        >
-          <span>Position ID:</span>
-          <span className="copy-field-value copy-field-value-mono">{row.id}</span>
-          <CopyButton
-            value={row.id}
-            label="position ID"
-            successDescription={`Position ID ${row.id} has been copied to your clipboard.`}
-          />
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "shares",
-    header: "Shares",
-    sortable: true,
-    align: "right",
-    cell: (row) => (
-      <div>
-        <div style={{ fontWeight: 600 }}>
-          {formatNumber(row.shares)} {row.symbol}
-        </div>
-        <div style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
-          Issuer: {row.issuer}
-        </div>
-      </div>
-    ),
-  },
-  {
-    id: "apy",
-    header: "APY",
-    sortable: true,
-    align: "right",
-    cell: (row) => (
-      <span style={{ color: "var(--accent-cyan)", fontWeight: 600 }}>
-        {row.apy.toFixed(2)}%
-      </span>
-    ),
-  },
-  {
-    id: "valueUsd",
-    header: "Value",
-    sortable: true,
-    align: "right",
-    cell: (row) => <span>{formatCurrency(row.valueUsd)}</span>,
-  },
-  {
-    id: "unrealizedGainUsd",
-    header: "Unrealized Gain",
-    sortable: true,
-    align: "right",
-    cell: (row) => (
-      <span
-        style={{
-          color:
-            row.unrealizedGainUsd >= 0
-              ? "var(--accent-cyan)"
-              : "var(--text-error)",
-          fontWeight: 600,
-        }}
-      >
-        {row.unrealizedGainUsd >= 0 ? "+" : ""}
-        {formatCurrency(row.unrealizedGainUsd)}
-      </span>
-    ),
-  },
-];
 
 const PortfolioSummaryCard: React.FC<{
   label: React.ReactNode;
@@ -171,10 +88,13 @@ const PortfolioSummaryCard: React.FC<{
 const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
   const toast = useToast();
   const navigate = useNavigate();
+  const { preferences } = usePreferencesContext();
   const [holdings, setHoldings] = useState<PortfolioHolding[]>([]);
   const [error, setError] = useState<ApiError | ValidationError | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const locale = preferences.locale;
+  const currency = preferences.currency;
 
   const { state: urlState, setSearch, setSort, setPage, setPageSize, setFilters, reset } = useUrlState<{ status: string, search: string }>({
     defaultSortBy: "valueUsd",
@@ -286,19 +206,112 @@ const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
     return holdings.reduce((sum, h) => sum + (h.apy * h.valueUsd), 0) / totalValue;
   }, [holdings, totalValue]);
 
+  const columns = useMemo<DataTableColumn<PortfolioHolding>[]>(() => [
+    {
+      id: "asset",
+      header: "Asset",
+      sortable: true,
+      width: "28%",
+      cell: (row) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{row.asset}</div>
+          <div style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+            {row.vaultName}
+          </div>
+          <div
+            className="copy-field"
+            style={{ marginTop: "8px", color: "var(--text-secondary)", fontSize: "0.78rem" }}
+          >
+            <span>Position ID:</span>
+            <span className="copy-field-value copy-field-value-mono">{row.id}</span>
+            <CopyButton
+              value={row.id}
+              label="position ID"
+              successDescription={`Position ID ${row.id} has been copied to your clipboard.`}
+            />
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "shares",
+      header: "Shares",
+      sortable: true,
+      align: "right",
+      cell: (row) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>
+            {formatNumber(row.shares, { locale, maximumFractionDigits: 2 })} {row.symbol}
+          </div>
+          <div style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
+            Issuer: {row.issuer}
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: "apy",
+      header: "APY",
+      sortable: true,
+      align: "right",
+      cell: (row) => (
+        <span style={{ color: "var(--accent-cyan)", fontWeight: 600 }}>
+          {formatPercent(row.apy, {
+            locale,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
+    },
+    {
+      id: "valueUsd",
+      header: "Value",
+      sortable: true,
+      align: "right",
+      cell: (row) => <span>{formatCurrency(row.valueUsd, currency, 2, locale)}</span>,
+    },
+    {
+      id: "unrealizedGainUsd",
+      header: "Unrealized Gain",
+      sortable: true,
+      align: "right",
+      cell: (row) => (
+        <span
+          style={{
+            color:
+              row.unrealizedGainUsd >= 0
+                ? "var(--accent-cyan)"
+                : "var(--text-error)",
+            fontWeight: 600,
+          }}
+        >
+          {row.unrealizedGainUsd >= 0 ? "+" : ""}
+          {formatCurrency(row.unrealizedGainUsd, currency, 2, locale)}
+        </span>
+      ),
+    },
+  ], [currency, locale]);
+
   // Compute trend values
   const totalNetValueTrend = useMemo(() => {
     if (totalValue === 0) return "N/A";
     // Calculate 7-day trend (simplified: using current value as proxy)
     // In a real app, this would compare with historical data
-    const trendPercent = ((totalGain / (totalValue - totalGain)) * 100).toFixed(1);
-    return isFinite(Number(trendPercent)) ? `${trendPercent}% gain` : "N/A";
-  }, [totalValue, totalGain]);
+    const trendPercent = (totalGain / (totalValue - totalGain)) * 100;
+    return Number.isFinite(trendPercent)
+      ? `${formatPercent(trendPercent, {
+          locale,
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
+        })} gain`
+      : "N/A";
+  }, [locale, totalValue, totalGain]);
 
   const cumulativeYieldTrend = useMemo(() => {
     if (totalGain === 0) return "--";
-    return `${formatCurrency(totalGain)} realized`;
-  }, [totalGain]);
+    return `${formatCurrency(totalGain, currency, 2, locale)} realized`;
+  }, [currency, locale, totalGain]);
 
   const weightedApyTrend = useMemo(() => {
     if (holdings.length === 0) return "N/A";
@@ -350,14 +363,14 @@ const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
           >
             <PortfolioSummaryCard
               label="Total Net Value"
-              value={formatCurrency(totalValue)}
+              value={formatCurrency(totalValue, currency, 2, locale)}
               icon={<DollarSign size={20} color="var(--accent-cyan)" />}
               trend={totalNetValueTrend}
               trendPositive={totalGain >= 0}
             />
             <PortfolioSummaryCard
               label="Cumulative Yield"
-              value={`${totalGain >= 0 ? '+' : ''}${formatCurrency(totalGain)}`}
+              value={`${totalGain >= 0 ? '+' : ''}${formatCurrency(totalGain, currency, 2, locale)}`}
               icon={<TrendingUp size={20} color="var(--accent-purple)" />}
               trend={cumulativeYieldTrend}
               trendPositive={totalGain >= 0}
@@ -372,7 +385,11 @@ const Portfolio: React.FC<PortfolioProps> = ({ walletAddress }) => {
                   />
                 </span>
               }
-              value={`${weightedApy.toFixed(2)}%`}
+              value={formatPercent(weightedApy, {
+                locale,
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
               icon={<Percent size={20} color="var(--accent-cyan)" />}
               trend={weightedApyTrend}
               trendPositive={true}

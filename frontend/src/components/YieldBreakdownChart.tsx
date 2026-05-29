@@ -9,7 +9,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TrendingUp } from "./icons";
-import { formatCurrency } from "../lib/formatters";
+import { usePreferencesContext } from "../context/PreferencesContext";
+import { formatCurrency, formatDate } from "../lib/formatters";
 
 interface YieldDataPoint {
   date: string;
@@ -50,9 +51,11 @@ interface TooltipProps {
   active?: boolean;
   payload?: ReadonlyArray<{ value?: number }>;
   label?: string;
+  locale: string;
+  currency: string;
 }
 
-function YieldTooltip({ active, payload, label }: TooltipProps) {
+function YieldTooltip({ active, payload, label, locale, currency }: TooltipProps) {
   if (!active || !payload?.length) return null;
   const value = payload[0]?.value ?? 0;
   return (
@@ -67,22 +70,25 @@ function YieldTooltip({ active, payload, label }: TooltipProps) {
     >
       <div style={{ color: "var(--text-secondary)", marginBottom: "4px" }}>
         {label
-          ? new Date(label).toLocaleDateString("en-US", {
+          ? formatDate(label, {
               month: "short",
               day: "numeric",
               year: "numeric",
-            })
+            }, locale)
           : ""}
       </div>
       <div style={{ color: "var(--accent-cyan)", fontWeight: 700 }}>
-        Daily yield: {formatCurrency(value)}
+        Daily yield: {formatCurrency(value, currency, 2, locale)}
       </div>
     </div>
   );
 }
 
 const YieldBreakdownChart: React.FC<YieldBreakdownChartProps> = ({ totalGain }) => {
+  const { preferences } = usePreferencesContext();
   const [period, setPeriod] = useState<YieldPeriod>("30D");
+  const locale = preferences.locale;
+  const currency = preferences.currency;
 
   const allData = useMemo(() => generateYieldData(totalGain, 90), [totalGain]);
 
@@ -127,7 +133,7 @@ const YieldBreakdownChart: React.FC<YieldBreakdownChartProps> = ({ totalGain }) 
           <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>
             Daily yield accrued —{" "}
             <span style={{ color: "var(--accent-cyan)", fontWeight: 600 }}>
-              {isEmpty ? "$0.00" : formatCurrency(periodTotal)}
+              {formatCurrency(isEmpty ? 0 : periodTotal, currency, 2, locale)}
             </span>{" "}
             earned in selected period
           </p>
@@ -205,10 +211,10 @@ const YieldBreakdownChart: React.FC<YieldBreakdownChartProps> = ({ totalGain }) 
                 tickLine={false}
                 tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
                 tickFormatter={(str: string) =>
-                  new Date(str).toLocaleDateString("en-US", {
+                  formatDate(str, {
                     month: "short",
                     day: "numeric",
-                  })
+                  }, locale)
                 }
                 minTickGap={28}
               />
@@ -216,9 +222,9 @@ const YieldBreakdownChart: React.FC<YieldBreakdownChartProps> = ({ totalGain }) 
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
-                tickFormatter={(v: number) => `$${v.toFixed(2)}`}
+                tickFormatter={(value: number) => formatCurrency(value, currency, 2, locale)}
               />
-              <Tooltip content={YieldTooltip} />
+              <Tooltip content={(props) => <YieldTooltip {...props} locale={locale} currency={currency} />} />
               <Line
                 type="monotone"
                 dataKey="yield"

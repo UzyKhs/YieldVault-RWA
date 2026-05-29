@@ -14,11 +14,14 @@ import { TrendingUp } from "./icons";
 import { useVaultHistory } from "../hooks/useVaultData";
 import Skeleton, { ChartSkeleton } from "./Skeleton";
 import { type TimeRange, getNow, getCutoffDate } from "../lib/dateUtils";
+import { usePreferencesContext } from "../context/PreferencesContext";
+import { formatDate, formatNumber } from "../lib/formatters";
 
 const VaultPerformanceTooltip = ({
   active,
   payload,
   label,
+  locale,
 }: TooltipContentProps<ValueType, NameType>) => {
   if (active && payload && payload.length) {
     const raw = payload[0]?.value;
@@ -35,11 +38,11 @@ const VaultPerformanceTooltip = ({
         }}
       >
         <div style={{ color: "var(--text-secondary)", marginBottom: "4px" }}>
-          {label
-            ? new Date(label).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-            : ""}
+          {label ? formatDate(label, { month: "short", day: "numeric", year: "numeric" }, locale) : ""}
         </div>
-        <div style={{ color: "var(--accent-cyan)", fontWeight: 700 }}>Index: {value.toFixed(2)}</div>
+        <div style={{ color: "var(--accent-cyan)", fontWeight: 700 }}>
+          Index: {formatNumber(value, { locale, minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </div>
       </div>
     );
   }
@@ -48,8 +51,10 @@ const VaultPerformanceTooltip = ({
 
 const VaultPerformanceChart: React.FC = () => {
   const { data: rawData = [], isLoading } = useVaultHistory();
+  const { preferences } = usePreferencesContext();
   const [timeRange, setTimeRange] = useState<TimeRange>("ALL");
   const isTest = process.env.NODE_ENV === 'test';
+  const locale = preferences.locale;
 
   const filteredData = useMemo(() => {
     if (!rawData.length) return [];
@@ -124,8 +129,7 @@ const VaultPerformanceChart: React.FC = () => {
                   tickLine={false}
                   tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
                   tickFormatter={(str: string) => {
-                    const date = new Date(str);
-                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    return formatDate(str, { month: 'short', day: 'numeric' }, locale);
                   }}
                   minTickGap={30}
                 />
@@ -134,8 +138,9 @@ const VaultPerformanceChart: React.FC = () => {
                   axisLine={false}
                   tickLine={false}
                   tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
+                  tickFormatter={(value: number) => formatNumber(value, { locale, maximumFractionDigits: 2 })}
                 />
-                <Tooltip content={VaultPerformanceTooltip} />
+                <Tooltip content={(props) => <VaultPerformanceTooltip {...props} locale={locale} />} />
                 <Area 
                   type="monotone" 
                   dataKey="value" 
@@ -162,8 +167,7 @@ const VaultPerformanceChart: React.FC = () => {
                     tickLine={false}
                     tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
                     tickFormatter={(str: string) => {
-                      const date = new Date(str);
-                      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      return formatDate(str, { month: 'short', day: 'numeric' }, locale);
                     }}
                     minTickGap={30}
                   />
@@ -172,8 +176,9 @@ const VaultPerformanceChart: React.FC = () => {
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: "var(--text-secondary)", fontSize: 11 }}
+                    tickFormatter={(value: number) => formatNumber(value, { locale, maximumFractionDigits: 2 })}
                   />
-                  <Tooltip content={VaultPerformanceTooltip} />
+                  <Tooltip content={(props) => <VaultPerformanceTooltip {...props} locale={locale} />} />
                   <Area 
                     type="monotone" 
                     dataKey="value" 

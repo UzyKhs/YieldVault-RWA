@@ -12,7 +12,7 @@ declare global {
 
 export type ApiKeyRole = 'admin' | 'super-admin';
 
-interface ApiKeyMetadata {
+export interface ApiKeyMetadata {
   createdAt: Date;
   rotatedAt?: Date;
   role: ApiKeyRole;
@@ -83,6 +83,27 @@ export function registerApiKey(
     role: options.role || 'admin',
   });
   return hash;
+}
+
+export function getApiKeyMetadata(hash: string): ApiKeyMetadata | null {
+  const metadata = API_KEYS.get(hash);
+  if (!metadata) {
+    return null;
+  }
+
+  return {
+    createdAt: metadata.createdAt,
+    rotatedAt: metadata.rotatedAt,
+    role: metadata.role,
+  };
+}
+
+export function restoreApiKey(hash: string, metadata: ApiKeyMetadata): void {
+  API_KEYS.set(hash, {
+    createdAt: metadata.createdAt,
+    rotatedAt: metadata.rotatedAt,
+    role: metadata.role,
+  });
 }
 
 export function revokeApiKey(hash: string): boolean {

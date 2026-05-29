@@ -32,9 +32,22 @@ import {
   validateApiKey,
   authenticateApiKeyValue,
   registerApiKey,
+  rotateApiKey,
+  revokeApiKey,
+  getApiKeyMetadata,
+  restoreApiKey,
   hasRequiredApiKeyRole,
   normalizeApiKeyRole,
 } from './middleware/apiKeyAuth';
+import {
+  API_KEY_AUDIT_ACTIONS,
+  isApiKeyHash,
+  getApiKeyFingerprintFromHash,
+  getApiKeyFingerprintFromValue,
+  resolveApiKeyAuditActor,
+  recordApiKeyAuditEvent,
+  listApiKeyAuditEvents,
+} from './apiKeyAudit';
 import {
   addAddress,
   removeAddress,
@@ -47,8 +60,7 @@ import vaultRouter from './vaultEndpoints';
 import transactionRouter from './transactionEndpoints';
 import {
   buildPortfolioHoldingsResponse,
-  createTransactionsCsvExportStream,
-  createTransactionsJsonExportStream,
+  buildTransactionExportArtifact,
   buildTransactionsResponse,
   buildVaultHistoryResponse,
 } from './listEndpoints';
@@ -80,6 +92,13 @@ import {
   updateMaintenanceModeState,
   logMaintenanceTransition,
 } from './maintenanceMode';
+import {
+  buildExportMetadataHeaderValue,
+  getExportJobById,
+  listExportJobs,
+  recordExportJob,
+  resolveExportGeneratedBy,
+} from './exportJobs';
 import { parseUtcDateRange, DateRangeParseError } from './dateRange';
 import { backfillApySnapshots } from './apySnapshot';
 import { getJobMetrics, getJobHealthStatus } from './jobGovernance';
@@ -204,7 +223,7 @@ function buildTransactionExportFilename(format: 'csv' | 'json'): string {
   return `transaction-history-${timestamp}.${format}`;
 }
 
-function handleTransactionExport(req: Request, res: Response): void {
+async function handleTransactionExport(req: Request, res: Response): Promise<void> {
   const format = req.query.format === 'csv' ? 'csv' : req.query.format === 'json' ? 'json' : null;
   if (!format) {
     res.status(400).json({
@@ -259,33 +278,46 @@ function handleTransactionExport(req: Request, res: Response): void {
     endDate: typeof req.query.endDate === 'string' ? req.query.endDate : undefined,
   };
 
-  const stream =
-    format === 'csv'
-      ? createTransactionsCsvExportStream(exportQuery)
-      : createTransactionsJsonExportStream(exportQuery);
+  try {
+    const artifact = buildTransactionExportArtifact(format, exportQuery);
+    const fileName = buildTransactionExportFilename(format);
+    const job = await recordExportJob({
+      format,
+      fileName,
+      contentType: artifact.contentType,
+      checksum: artifact.checksum,
+      checksumAlgorithm: artifact.checksumAlgorithm,
+      generatedBy: resolveExportGeneratedBy(req),
+      walletAddress: access.walletAddress,
+      rowCount: artifact.rowCount,
+      filters: {
+        type: exportQuery.type || null,
+        status: exportQuery.status || null,
+        sortBy: exportQuery.sortBy || null,
+        sortOrder: exportQuery.sortOrder || null,
+        startDate: exportQuery.startDate || null,
+        endDate: exportQuery.endDate || null,
+        walletAddress: exportQuery.walletAddress || null,
+      },
+    });
 
-  res.setHeader(
-    'Content-Type',
-    format === 'csv' ? 'text/csv; charset=utf-8' : 'application/json; charset=utf-8',
-  );
-  res.setHeader('Content-Disposition', `attachment; filename="${buildTransactionExportFilename(format)}"`);
-
-  stream.on('error', (error) => {
-    logger.log('error', 'Transaction export stream failed', {
+    res.setHeader('Content-Type', artifact.contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('X-Export-Job-Id', job.id);
+    res.setHeader('X-Export-Checksum', artifact.checksum);
+    res.setHeader('X-Export-Checksum-Algorithm', artifact.checksumAlgorithm);
+    res.setHeader('X-Export-Metadata', buildExportMetadataHeaderValue(job));
+    res.status(200).send(artifact.body);
+  } catch (error) {
+    logger.log('error', 'Transaction export failed', {
       error: error instanceof Error ? error.message : String(error),
     });
-    if (!res.headersSent) {
-      res.status(500).json({
-        error: 'Internal Server Error',
-        status: 500,
-        message: 'Failed to stream transaction export',
-      });
-    } else {
-      res.end();
-    }
-  });
-
-  stream.pipe(res);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: 'Failed to generate transaction export',
+    });
+  }
 }
 
 // ─── Rate Limiting Middleware ────────────────────────────────────────────────
@@ -993,9 +1025,9 @@ app.get('/admin/impersonate/:wallet', validateApiKey, async (req: Request, res: 
  * POST /admin/api-keys/register - Register a new API key
  * Requires API key authentication (for boostrapping, requires special permission)
  */
-app.post('/admin/api-keys/register', validateApiKey, (req: Request, res: Response) => {
+app.post('/admin/api-keys/register', validateApiKey, async (req: Request, res: Response) => {
   const { key, role: requestedRole } = req.body;
-  if (!key) {
+  if (!key || typeof key !== 'string' || !key.trim()) {
     res.status(400).json({ error: 'Missing key in request body' });
     return;
   }
@@ -1010,13 +1042,223 @@ app.post('/admin/api-keys/register', validateApiKey, (req: Request, res: Respons
     return;
   }
 
-  const hash = registerApiKey(key, { role });
-  res.json({
-    message: 'API key registered',
-    hash,
-    role,
-    created: new Date().toISOString(),
-  });
+  const normalizedKey = key.trim();
+  const hash = registerApiKey(normalizedKey, { role });
+
+  try {
+    await recordApiKeyAuditEvent({
+      actor: resolveApiKeyAuditActor(req),
+      action: API_KEY_AUDIT_ACTIONS.created,
+      keyFingerprint: getApiKeyFingerprintFromHash(hash),
+    });
+
+    res.json({
+      message: 'API key registered',
+      hash,
+      fingerprint: getApiKeyFingerprintFromHash(hash),
+      role,
+      created: new Date().toISOString(),
+    });
+  } catch (error) {
+    revokeApiKey(hash);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to persist API key audit event',
+    });
+  }
+});
+
+/**
+ * POST /admin/api-keys/rotate - Rotate an API key
+ * Body: { oldHash: string, newKey: string }
+ * Requires API key authentication.
+ */
+app.post('/admin/api-keys/rotate', validateApiKey, async (req: Request, res: Response) => {
+  const { oldHash, newKey } = req.body || {};
+  if (!isApiKeyHash(oldHash)) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'oldHash must be a valid SHA-256 API key hash',
+    });
+    return;
+  }
+
+  if (typeof newKey !== 'string' || !newKey.trim()) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'newKey is required',
+    });
+    return;
+  }
+
+  const previousMetadata = getApiKeyMetadata(oldHash);
+  if (!previousMetadata) {
+    res.status(404).json({
+      error: 'Not Found',
+      status: 404,
+      message: 'API key not found',
+    });
+    return;
+  }
+
+  const normalizedNewKey = newKey.trim();
+  const newHash = rotateApiKey(oldHash, normalizedNewKey);
+  if (!newHash) {
+    res.status(404).json({
+      error: 'Not Found',
+      status: 404,
+      message: 'API key not found',
+    });
+    return;
+  }
+
+  try {
+    await recordApiKeyAuditEvent({
+      actor: resolveApiKeyAuditActor(req),
+      action: API_KEY_AUDIT_ACTIONS.rotated,
+      keyFingerprint: getApiKeyFingerprintFromValue(normalizedNewKey),
+    });
+
+    res.status(200).json({
+      message: 'API key rotated',
+      oldFingerprint: getApiKeyFingerprintFromHash(oldHash),
+      newHash,
+      newFingerprint: getApiKeyFingerprintFromHash(newHash),
+      rotatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    revokeApiKey(newHash);
+    restoreApiKey(oldHash, previousMetadata);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to persist API key audit event',
+    });
+  }
+});
+
+/**
+ * POST /admin/api-keys/revoke - Revoke an API key
+ * Body: { hash: string }
+ * Requires API key authentication.
+ */
+app.post('/admin/api-keys/revoke', validateApiKey, async (req: Request, res: Response) => {
+  const { hash } = req.body || {};
+  if (!isApiKeyHash(hash)) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'hash must be a valid SHA-256 API key hash',
+    });
+    return;
+  }
+
+  const previousMetadata = getApiKeyMetadata(hash);
+  if (!previousMetadata) {
+    res.status(404).json({
+      error: 'Not Found',
+      status: 404,
+      message: 'API key not found',
+    });
+    return;
+  }
+
+  revokeApiKey(hash);
+
+  try {
+    await recordApiKeyAuditEvent({
+      actor: resolveApiKeyAuditActor(req),
+      action: API_KEY_AUDIT_ACTIONS.revoked,
+      keyFingerprint: getApiKeyFingerprintFromHash(hash),
+    });
+
+    res.status(200).json({
+      message: 'API key revoked',
+      fingerprint: getApiKeyFingerprintFromHash(hash),
+      revokedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    restoreApiKey(hash, previousMetadata);
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to persist API key audit event',
+    });
+  }
+});
+
+/**
+ * GET /admin/api-keys/audit-events - list API key lifecycle audit events
+ * Supports ?action=created|rotated|revoked&from=<ISO or YYYY-MM-DD>&to=<ISO or YYYY-MM-DD>&limit=N
+ */
+app.get('/admin/api-keys/audit-events', validateApiKey, async (req: Request, res: Response) => {
+  const parseLimited = (v: unknown, fallback: number, min: number, max: number) => {
+    const n = parseInt(String(v ?? ''), 10);
+    return Number.isNaN(n) ? fallback : Math.min(Math.max(n, min), max);
+  };
+
+  const rawAction = typeof req.query.action === 'string' ? req.query.action : undefined;
+  const action =
+    rawAction === API_KEY_AUDIT_ACTIONS.created ||
+    rawAction === API_KEY_AUDIT_ACTIONS.rotated ||
+    rawAction === API_KEY_AUDIT_ACTIONS.revoked
+      ? rawAction
+      : undefined;
+
+  if (rawAction && !action) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'action must be one of: created, rotated, revoked',
+    });
+    return;
+  }
+
+  try {
+    const range = parseUtcDateRange({
+      from: typeof req.query.from === 'string' ? req.query.from : undefined,
+      to: typeof req.query.to === 'string' ? req.query.to : undefined,
+    });
+    const limit = parseLimited(req.query.limit, 50, 1, 200);
+    const events = await listApiKeyAuditEvents({
+      action,
+      start: range.start,
+      end: range.end,
+      limit,
+    });
+
+    res.status(200).json({
+      events,
+      meta: {
+        count: events.length,
+        limit,
+        filters: {
+          action: action || null,
+          from: range.start || null,
+          to: range.end || null,
+        },
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    if (error instanceof DateRangeParseError) {
+      res.status(error.status).json({
+        error: 'Bad Request',
+        status: error.status,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to read API key audit events',
+    });
+  }
 });
 
 /**
@@ -1215,6 +1457,129 @@ app.get('/admin/audit-logs', validateApiKey, async (req: Request, res: Response)
       timestamp: new Date().toISOString(),
     },
   });
+});
+
+/**
+ * GET /admin/exports/jobs - list persisted transaction export metadata
+ */
+app.get('/admin/exports/jobs', validateApiKey, async (req: Request, res: Response) => {
+  const parseLimited = (v: unknown, fallback: number, min: number, max: number) => {
+    const n = parseInt(String(v ?? ''), 10);
+    return Number.isNaN(n) ? fallback : Math.min(Math.max(n, min), max);
+  };
+
+  const rawFormat = typeof req.query.format === 'string' ? req.query.format : undefined;
+  const format = rawFormat === 'csv' || rawFormat === 'json' ? rawFormat : undefined;
+  if (rawFormat && !format) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'format must be either csv or json',
+    });
+    return;
+  }
+
+  try {
+    const range = parseUtcDateRange({
+      from: typeof req.query.from === 'string' ? req.query.from : undefined,
+      to: typeof req.query.to === 'string' ? req.query.to : undefined,
+    });
+    const limit = parseLimited(req.query.limit, 50, 1, 200);
+    const jobs = await listExportJobs({
+      format,
+      generatedBy: typeof req.query.generatedBy === 'string' ? req.query.generatedBy : undefined,
+      walletAddress: typeof req.query.walletAddress === 'string' ? req.query.walletAddress : undefined,
+      checksum: typeof req.query.checksum === 'string' ? req.query.checksum : undefined,
+      start: range.start,
+      end: range.end,
+      limit,
+    });
+
+    res.status(200).json({
+      jobs,
+      meta: {
+        count: jobs.length,
+        limit,
+        filters: {
+          format: format || null,
+          generatedBy: typeof req.query.generatedBy === 'string' ? req.query.generatedBy : null,
+          walletAddress: typeof req.query.walletAddress === 'string' ? req.query.walletAddress : null,
+          checksum: typeof req.query.checksum === 'string' ? req.query.checksum : null,
+          from: range.start || null,
+          to: range.end || null,
+        },
+        timestamp: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    if (error instanceof DateRangeParseError) {
+      res.status(error.status).json({
+        error: 'Bad Request',
+        status: error.status,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to query export jobs',
+    });
+  }
+});
+
+/**
+ * POST /admin/exports/jobs/:id/verify - verify a previously generated export checksum
+ * Body: { checksum: string }
+ */
+app.post('/admin/exports/jobs/:id/verify', validateApiKey, async (req: Request, res: Response) => {
+  const checksum =
+    typeof req.body?.checksum === 'string'
+      ? req.body.checksum.trim().toLowerCase()
+      : typeof req.query.checksum === 'string'
+        ? req.query.checksum.trim().toLowerCase()
+        : '';
+
+  if (!checksum) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'checksum is required',
+    });
+    return;
+  }
+
+  try {
+    const job = await getExportJobById(String(req.params.id));
+    if (!job) {
+      res.status(404).json({
+        error: 'Not Found',
+        status: 404,
+        message: 'Export job not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      exportJobId: job.id,
+      valid: job.checksum.toLowerCase() === checksum,
+      expectedChecksum: job.checksum,
+      providedChecksum: checksum,
+      checksumAlgorithm: job.checksumAlgorithm,
+      generatedBy: job.generatedBy,
+      createdAt: job.createdAt,
+      fileName: job.fileName,
+      format: job.format,
+      rowCount: job.rowCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to verify export checksum',
+    });
+  }
 });
 
 /**
