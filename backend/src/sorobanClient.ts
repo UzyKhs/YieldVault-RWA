@@ -6,7 +6,7 @@
 import {
   Keypair,
   Contract,
-  SorobanRpc,
+  rpc as StellarRpc,
   nativeToScVal,
   StrKey,
   TransactionBuilder,
@@ -18,7 +18,7 @@ import { getCurrentTraceId } from './tracing';
 // Initialize Soroban RPC client
 const getRpcClient = () => {
   const rpcUrl = process.env.STELLAR_RPC_URL || 'https://soroban-testnet.stellar.org';
-  return new SorobanRpc.Server(rpcUrl);
+  return new StellarRpc.Server(rpcUrl);
 };
 
 // Validate that required environment variables are set
@@ -85,7 +85,7 @@ export async function submitVaultOperation(
   try {
     validateEnvironment();
 
-    const rpc = getRpcClient();
+    const rpcClient = getRpcClient();
     const sourceKeypair = getSourceKeypair();
     const contractId = process.env.VAULT_CONTRACT_ID!;
     const networkPassphrase = process.env.STELLAR_NETWORK_PASSPHRASE!;
@@ -104,7 +104,7 @@ export async function submitVaultOperation(
     });
 
     // Get account details for building the transaction
-    const sourceAccount = await rpc.getAccount(sourceKeypair.publicKey());
+    const sourceAccount = await rpcClient.getAccount(sourceKeypair.publicKey());
 
     // Create contract instance
     const contract = new Contract(contractId);
@@ -141,11 +141,11 @@ export async function submitVaultOperation(
       traceId: getCurrentTraceId(),
     });
 
-    const simulated = await rpc.simulateTransaction(tx);
+    const simulated = await rpcClient.simulateTransaction(tx);
 
-    if (SorobanRpc.isSimulationError(simulated)) {
+    if (StellarRpc.Api.isSimulationError(simulated)) {
       const errorMessage = `Soroban simulation error: ${
-        simulated.error || 'Unknown error'
+        'error' in simulated ? String(simulated.error) : 'Unknown error'
       }`;
       logger.log('error', errorMessage, {
         operationType,
@@ -155,7 +155,7 @@ export async function submitVaultOperation(
       throw new SorobanSimulationError(errorMessage, 'SIMULATION_ERROR');
     }
 
-    if (SorobanRpc.isSimulationRestore(simulated)) {
+    if (StellarRpc.Api.isSimulationRestore(simulated)) {
       logger.log('warn', 'Soroban transaction requires restore', {
         operationType,
         walletAddress,
@@ -168,33 +168,36 @@ export async function submitVaultOperation(
     }
 
     // Assemble and submit the transaction
-    const prepared = SorobanRpc.assembleTransaction(tx, simulated).build();
+    const prepared = StellarRpc.assembleTransaction(tx, simulated).build();
 
     logger.log('debug', `Submitting Soroban transaction for ${operationType}`, {
       traceId: getCurrentTraceId(),
     });
 
-    const txResponse = await rpc.sendTransaction(prepared);
-
-    if (txResponse.status === 'FAILED') {
-      const resultXdr = txResponse.resultXdr;
-      const errorMessage = `Soroban transaction submission failed: ${resultXdr || 'Unknown error'}`;
-      logger.log('error', errorMessage, {
-        operationType,
-        walletAddress,
-        traceId: getCurrentTraceId(),
-      });
-      throw new SorobanSimulationError(errorMessage, 'SUBMISSION_FAILED');
-    }
+    const txResponse = await rpcClient.sendTransaction(prepared);
 
     if (txResponse.status === 'ERROR') {
-      const errorMessage = `Soroban RPC error: ${txResponse.errorResultXdr || 'Unknown error'}`;
+      const errorMessage = `Soroban RPC error: ${
+        txResponse.errorResult?.toXDR?.('base64') || 'Unknown error'
+      }`;
       logger.log('error', errorMessage, {
         operationType,
         walletAddress,
         traceId: getCurrentTraceId(),
       });
       throw new SorobanSimulationError(errorMessage, 'RPC_ERROR');
+    }
+
+    if (txResponse.status !== 'PENDING') {
+      const errorMessage = `Soroban transaction submission failed: ${
+        txResponse.errorResult?.toXDR?.('base64') || 'Unknown error'
+      }`;
+      logger.log('error', errorMessage, {
+        operationType,
+        walletAddress,
+        traceId: getCurrentTraceId(),
+      });
+      throw new SorobanSimulationError(errorMessage, 'SUBMISSION_FAILED');
     }
 
     // Transaction successfully submitted; return the hash

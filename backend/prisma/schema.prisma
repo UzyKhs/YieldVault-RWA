@@ -168,3 +168,21 @@ model AdminActionReceipt {
   @@index([actor])
   @@index([timestamp])
 }
+
+model EmailQueue {
+  id          String    @id @default(uuid())
+  to          String
+  subject     String
+  text        String?
+  html        String?
+  status      String    @default("pending")
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(5)
+  nextRetryAt DateTime?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}

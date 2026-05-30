@@ -784,7 +784,7 @@ app.get('/admin/maintenance', validateApiKey, (_req: Request, res: Response) => 
  * Body: { enabled: boolean, reason?: string, retryAfterSeconds?: number }
  * Requires API key authentication.
  */
-app.post('/admin/maintenance', validateApiKey, (req: Request, res: Response) => {
+app.post('/admin/maintenance', validateApiKey, async (req: Request, res: Response) => {
   const { enabled, reason, retryAfterSeconds } = req.body;
   if (typeof enabled !== 'boolean') {
     res.status(400).json({
@@ -972,7 +972,7 @@ app.post('/admin/events/replay', validateApiKey, async (req: Request, res: Respo
  * Requires API key authentication.
  * Body: { "walletAddress": "G..." }
  */
-app.post('/admin/allowlist/add', validateApiKey, (req: Request, res: Response) => {
+app.post('/admin/allowlist/add', validateApiKey, async (req: Request, res: Response) => {
   const { walletAddress } = req.body;
   if (!walletAddress || typeof walletAddress !== 'string') {
     res.status(400).json({ error: 'Missing or invalid walletAddress in request body' });
