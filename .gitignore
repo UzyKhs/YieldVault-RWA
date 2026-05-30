@@ -5,6 +5,8 @@
 # Node
 /frontend/node_modules
 /backend/node_modules
+/backend/prisma/*.db
+/backend/prisma/*.db-journal
 
 # Environment Variables - NEVER COMMIT THESE
 .env
