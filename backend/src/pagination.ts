@@ -34,6 +34,8 @@ export interface PaginationQuery {
  * Pagination metadata included in list responses.
  */
 export interface PaginationMeta {
+  /** Requested page size cap. */
+  limit?: number;
   /** Number of items returned in this response. */
   count: number;
   /** Total number of items available (if known). */

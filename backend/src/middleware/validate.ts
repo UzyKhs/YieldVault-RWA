@@ -9,7 +9,7 @@
  * Returns a uniform 400 response on failure.
  */
 
-import { z, ZodError, ZodTypeAny } from 'zod';
+import { z, ZodError, ZodIssue, ZodTypeAny } from 'zod';
 import type { Request, Response, NextFunction } from 'express';
 
 // ─── Shared field schemas ─────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ import type { Request, Response, NextFunction } from 'express';
 /** Stellar wallet address: G + 55 base32 chars, uppercase */
 export const walletAddressSchema = z
   .string()
-  .regex(/^G[A-Z2-7]{55}$/, 'Invalid Stellar wallet address format');
+  .regex(/^G[A-Za-z2-7]{55}$/, 'Invalid Stellar wallet address format');
 
 /** Positive numeric amount (accepts number or numeric string) */
 export const amountSchema = z
@@ -98,8 +98,45 @@ interface ValidateTargets {
   params?: ZodTypeAny;
 }
 
-function formatZodError(err: ZodError): string {
-  return err.errors
+function sortIssuesDeterministically(issues: ZodIssue[]): ZodIssue[] {
+  return [...issues].sort((a, b) => {
+    const pathA = a.path.join('.');
+    const pathB = b.path.join('.');
+    if (pathA !== pathB) {
+      return pathA.localeCompare(pathB);
+    }
+    if (a.code !== b.code) {
+      return a.code.localeCompare(b.code);
+    }
+    return a.message.localeCompare(b.message);
+  });
+}
+
+function mapIssueCode(issue: ZodIssue): string {
+  switch (issue.code) {
+    case 'invalid_type':
+      return 'INVALID_TYPE';
+    case 'invalid_string':
+      return 'INVALID_STRING';
+    case 'too_small':
+      return 'VALUE_TOO_SMALL';
+    case 'too_big':
+      return 'VALUE_TOO_BIG';
+    case 'invalid_enum_value':
+      return 'INVALID_ENUM_VALUE';
+    case 'unrecognized_keys':
+      return 'UNRECOGNIZED_KEYS';
+    case 'invalid_union':
+      return 'INVALID_UNION';
+    case 'custom':
+      return 'CUSTOM_VALIDATION_FAILED';
+    default:
+      return 'INVALID_VALUE';
+  }
+}
+
+function formatZodError(issues: ZodIssue[]): string {
+  return issues
     .map((e) => `${e.path.length ? e.path.join('.') + ': ' : ''}${e.message}`)
     .join('; ');
 }
@@ -119,11 +156,17 @@ export function validate(schemas: ValidateTargets) {
       next();
     } catch (err) {
       if (err instanceof ZodError) {
+        const issues = sortIssuesDeterministically(err.errors);
         res.status(400).json({
           error: 'Bad Request',
           status: 400,
-          message: formatZodError(err),
-          details: err.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+          code: 'VALIDATION_FAILED',
+          message: formatZodError(issues),
+          details: issues.map((e) => ({
+            code: mapIssueCode(e),
+            field: e.path.join('.'),
+            message: e.message,
+          })),
         });
         return;
       }

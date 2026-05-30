@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import crypto from 'crypto';
+import { redactSensitiveAttributes } from './redaction';
 
 declare global {
   namespace Express {
@@ -54,7 +55,9 @@ export function createAdminAuditMiddleware() {
         durationMs: Date.now() - startedAt,
         ip: req.ip || 'unknown',
         correlationId: req.header('x-correlation-id') || undefined,
-        metadata: req.adminAuditMetadata,
+        metadata: req.adminAuditMetadata
+          ? redactSensitiveAttributes(req.adminAuditMetadata)
+          : undefined,
       };
 
       entries.unshift(entry);

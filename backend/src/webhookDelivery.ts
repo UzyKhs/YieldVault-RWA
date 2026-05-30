@@ -154,7 +154,16 @@ export async function probeWebhookVerification(endpoint: InternalWebhookEndpoint
       throw new Error(`Verification endpoint returned HTTP ${response.status}`);
     }
 
-    const responseChallenge = response.headers.get('x-yieldvault-challenge');
+    const headersRecord = response.headers as unknown as {
+      get?: (name: string) => string | null;
+      [key: string]: unknown;
+    };
+    const responseChallenge =
+      typeof headersRecord?.get === 'function'
+        ? headersRecord.get('x-yieldvault-challenge')
+        : typeof headersRecord?.['x-yieldvault-challenge'] === 'string'
+          ? (headersRecord['x-yieldvault-challenge'] as string)
+          : null;
     if (responseChallenge === endpoint.challengeToken) {
       return true;
     }
