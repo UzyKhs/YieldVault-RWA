@@ -40,6 +40,8 @@ import type { Request, Response, NextFunction } from 'express';
 import { logger } from './middleware/structuredLogging';
 import Redis from 'ioredis';
 import { normalizeWalletAddress } from './walletUtils';
+import { walletNonceService, type WalletAction } from './walletNonce';
+import { buildWalletSignMessage } from './walletSignature';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -566,13 +568,41 @@ export function requireAuth(
 // ─── Auth Route Handlers ──────────────────────────────────────────────────────
 
 /**
+ * POST /api/v1/auth/nonce
+ * Issues a single-use nonce for a signed wallet action.
+ * Body: { walletAddress, action: login | deposit | withdrawal }
+ */
+export async function nonceHandler(req: Request, res: Response): Promise<void> {
+  const { walletAddress, action } = req.body as {
+    walletAddress: string;
+    action: WalletAction;
+  };
+
+  try {
+    const issued = await walletNonceService.issue(walletAddress, action, (base) =>
+      buildWalletSignMessage({
+        walletAddress: base.walletAddress,
+        action: base.action,
+        nonce: base.nonce,
+        issuedAt: base.issuedAt,
+        expiresAt: base.expiresAt,
+      }),
+    );
+
+    res.status(200).json(issued);
+  } catch (err) {
+    res.status(429).json({
+      error: 'Too Many Requests',
+      status: 429,
+      message: err instanceof Error ? err.message : 'Unable to issue nonce',
+    });
+  }
+}
+
+/**
  * POST /auth/login
  * Issues a token pair after wallet authentication.
- * Body: { walletAddress: string }
- *
- * In production this endpoint would also verify a wallet signature
- * (e.g. a Stellar transaction signed with the wallet's private key)
- * before issuing tokens.
+ * Body: { walletAddress, nonce, signature } when nonce enforcement is enabled.
  */
 export async function loginHandler(req: Request, res: Response): Promise<void> {
   const { walletAddress } = req.body;

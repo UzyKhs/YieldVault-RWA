@@ -3,9 +3,11 @@ import { Loader2, AlertTriangle } from "./icons";
 import Skeleton from "./Skeleton";
 import { Tooltip } from "./ui/Tooltip";
 import { useSharePrice } from "../hooks/useSharePrice";
+import { useStaleIndicator } from "../hooks/useStaleIndicator";
 
 export const SharePriceDisplay: React.FC = () => {
-  const { sharePrice, isLoading, isRefetching, error } = useSharePrice();
+  const { sharePrice, isLoading, isRefetching, error, lastUpdated } = useSharePrice();
+  const { isStale, ageText } = useStaleIndicator(lastUpdated);
 
   return (
     <div
@@ -54,6 +56,19 @@ export const SharePriceDisplay: React.FC = () => {
               <AlertTriangle
                 size={14}
                 aria-label="Share price data may be stale"
+                style={{ marginLeft: "4px", color: "var(--text-warning)", cursor: "help" }}
+              />
+            </Tooltip>
+          )}
+
+          {isStale && !error && !isRefetching && (
+            <Tooltip
+              content={`Data may be stale · ${ageText}`}
+              placement="top"
+            >
+              <AlertTriangle
+                size={14}
+                aria-label={`Share price data may be stale · ${ageText}`}
                 style={{ marginLeft: "4px", color: "var(--text-warning)", cursor: "help" }}
               />
             </Tooltip>

@@ -9,7 +9,7 @@ This project is structured as a monorepo containing both the Stellar Soroban sma
 - `/contracts/vault/`: Contains the Rust Soroban smart contract for handling the vault logic, fractional share minting (`yvUSDC`), scaling withdrawals, and simulated yield accrual.
 - `/contracts/mock-strategy/`: Contains test mock contracts for the Korean sovereign debt strategy and price oracle.
 - `/frontend/`: Contains the React + Vite frontend application, integrating `@stellar/freighter-api` for seamless user wallet connections and a premium UI to interact with the protocol.
-- `/docs/`: Contains the Product Requirements Document (PRD), Architecture Document, [Domain Glossary](./docs/GLOSSARY.md), and tracked GitHub issues.
+- `/docs/`: Contains the Product Requirements Document (PRD), Architecture Document, [Domain Glossary](./docs/GLOSSARY.md), and tracked GitHub issues. See also the [Deposit & Withdrawal Lifecycle](./docs/DEPOSIT_WITHDRAWAL_LIFECYCLE.md) for sequence diagrams.
 
 ## Architecture
 
@@ -63,6 +63,8 @@ For a comprehensive overview of the smart contract architecture, module responsi
 4. **Open browser**: http://localhost:5173
 
 For detailed setup instructions, prerequisites, and troubleshooting, see **[Local Development Quickstart](./docs/LOCAL_DEVELOPMENT_QUICKSTART.md)**.
+
+For a complete environment variable reference with defaults, required flags, and production recommendations, see **[Environment Variable Matrix](./docs/ENV_VARIABLE_MATRIX.md)**.
 
 ## API Documentation
 

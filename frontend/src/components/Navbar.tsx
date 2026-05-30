@@ -8,7 +8,7 @@ import TvlTicker from "./TvlTicker";
 import HealthStatusIndicator from "./HealthStatusIndicator";
 import { Layers } from "./icons";
 import { useTranslation } from "../i18n";
-import { networkConfig } from "../config/network";
+import { useWalletNetwork } from "../hooks/useWalletNetwork";
 
 interface NavbarProps {
   currentPath?: "/" | "/analytics" | "/portfolio";
@@ -26,9 +26,9 @@ const Navbar: FC<NavbarProps> = ({
   onDisconnect,
 }) => {
   const { t } = useTranslation();
-  const [networkLabel, setNetworkLabel] = useState(
-    networkConfig.isTestnet ? "Testnet" : "Mainnet",
-  );
+  const { walletNetwork, expectedNetwork } = useWalletNetwork(walletAddress);
+  // Show wallet's actual network when known, otherwise fall back to app's expected network
+  const networkLabel = walletNetwork ?? expectedNetwork;
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -44,41 +44,6 @@ const Navbar: FC<NavbarProps> = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
-
-  // Resolve network label
-  useEffect(() => {
-    let active = true;
-
-    const resolveNetworkLabel = async () => {
-      if (!walletAddress) return;
-      try {
-        const freighterApi = await import("@stellar/freighter-api");
-        if (typeof freighterApi.getNetworkDetails !== "function") return;
-
-        const details = await freighterApi.getNetworkDetails();
-        if (!active || !details) return;
-
-        const isMainnet = details.networkPassphrase
-          ?.toLowerCase()
-          .includes("public");
-
-        setNetworkLabel(isMainnet ? "Mainnet" : "Testnet");
-      } catch {
-        // fallback stays
-      }
-    };
-
-    void resolveNetworkLabel();
-
-    const interval = window.setInterval(() => {
-      void resolveNetworkLabel();
-    }, 10_000);
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-    };
-  }, [walletAddress]);
 
   return (
     <nav

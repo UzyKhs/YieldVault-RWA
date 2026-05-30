@@ -28,6 +28,11 @@ export const amountSchema = z
 
 // ─── Body schemas ─────────────────────────────────────────────────────────────
 
+const signedActionFields = {
+  nonce: z.string().min(16).max(128),
+  signature: z.string().min(32).max(512),
+};
+
 /** POST /api/v1/vault/deposits  and  POST /api/v1/vault/withdrawals */
 export const VaultOperationSchema = z
   .object({
@@ -36,6 +41,28 @@ export const VaultOperationSchema = z
     walletAddress: walletAddressSchema,
     email: z.string().email().optional(),
     referralCode: z.string().max(64).optional(),
+    nonce: z.string().min(16).max(128).optional(),
+    signature: z.string().min(32).max(512).optional(),
+  })
+  .strict();
+
+/** Vault write body when wallet nonce enforcement is strict */
+export const SignedVaultOperationSchema = z
+  .object({
+    amount: amountSchema,
+    asset: z.string().min(1).max(12),
+    walletAddress: walletAddressSchema,
+    email: z.string().email().optional(),
+    referralCode: z.string().max(64).optional(),
+    ...signedActionFields,
+  })
+  .strict();
+
+/** POST /api/v1/auth/nonce */
+export const NonceRequestSchema = z
+  .object({
+    walletAddress: walletAddressSchema,
+    action: z.enum(['login', 'deposit', 'withdrawal']),
   })
   .strict();
 
@@ -43,6 +70,16 @@ export const VaultOperationSchema = z
 export const LoginSchema = z
   .object({
     walletAddress: walletAddressSchema,
+    nonce: z.string().min(16).max(128).optional(),
+    signature: z.string().min(32).max(512).optional(),
+  })
+  .strict();
+
+/** POST /api/v1/auth/login when wallet nonce enforcement is strict */
+export const SignedLoginSchema = z
+  .object({
+    walletAddress: walletAddressSchema,
+    ...signedActionFields,
   })
   .strict();
 

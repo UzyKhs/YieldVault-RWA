@@ -140,18 +140,24 @@ model ProcessedEvent {
 }
 
 model WebhookEndpoint {
-  id         String    @id
-  url        String
-  eventTypes String    // JSON array
-  enabled    Boolean
-  secretHash String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  deletedAt  DateTime?
-  deletedBy  String?
+  id                    String    @id
+  url                   String
+  eventTypes            String    // JSON array
+  enabled               Boolean
+  secretHash            String?
+  verificationStatus    String    @default("pending")
+  challengeTokenHash    String?
+  challengeExpiresAt    DateTime?
+  verifiedAt            DateTime?
+  lastVerificationError String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+  deletedBy             String?
 
   @@index([createdAt])
   @@index([deletedAt])
+  @@index([verificationStatus])
 }
 
 model AdminActionReceipt {
@@ -222,4 +228,24 @@ model EmailQueue {
 
   @@index([status])
   @@index([createdAt])
+}
+
+model WebhookDeadLetter {
+  id                 String   @id @default(uuid())
+  endpointId         String
+  endpointUrl        String
+  eventType          String
+  payload            String
+  attempts           Int
+  lastError          String?
+  originalDeliveryId String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  retriedAt          DateTime?
+  status             String   @default("dead-letter")
+
+  @@index([endpointId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([status])
 }

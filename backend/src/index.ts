@@ -37,6 +37,10 @@ import { geofencingMiddleware } from './middleware/geofencing';
 import { cacheMiddleware, invalidateCache, getCacheStats } from './middleware/cache';
 import { validate, LoginSchema, RefreshSchema } from './middleware/validate';
 import {
+  setWithdrawalLimitOverride,
+  listWithdrawalLimitAuditEntries,
+} from './middleware/withdrawalDailyLimit';
+import {
   validateApiKey,
   authenticateApiKeyValue,
   registerApiKey,
@@ -86,6 +90,7 @@ import { latencyMonitoringService } from './latencyMonitoring';
 import { startEventPollingService, stopEventPollingService } from './eventPollingService';
 import { prisma, getPrismaRuntimeConfig } from './prisma';
 import {
+  verifyWebhookEndpoint,
   registerWebhookEndpoint,
   updateWebhookEndpoint,
   deleteWebhookEndpoint,
@@ -95,6 +100,8 @@ import {
   getWebhookDeliveryMetrics,
   createWebhookSignature,
   verifyWebhookSignature,
+  listWebhookDeadLetters,
+  retryWebhookDeadLetter,
 } from './webhookDelivery';
 import {
   maintenanceModeMiddleware,
@@ -971,6 +978,61 @@ app.post('/admin/events/replay', validateApiKey, async (req: Request, res: Respo
   }
 });
 
+/**
+ * POST /admin/withdrawal-limits/override
+ * Grants a temporary admin override for a wallet's daily withdrawal limit.
+ * Requires super-admin API key.
+ */
+app.post('/admin/withdrawal-limits/override', validateApiKey, async (req: Request, res: Response) => {
+  const walletAddress = typeof req.body?.walletAddress === 'string' ? req.body.walletAddress.trim() : '';
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  const ttlSeconds =
+    typeof req.body?.ttlSeconds === 'number' && req.body.ttlSeconds > 0
+      ? req.body.ttlSeconds
+      : 3600;
+
+  if (!walletAddress || !reason) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'walletAddress and reason are required',
+    });
+    return;
+  }
+
+  if (!hasRequiredApiKeyRole(req, 'super-admin')) {
+    res.status(403).json({
+      error: 'Forbidden',
+      status: 403,
+      message: 'Super-admin role is required to override withdrawal limits',
+    });
+    return;
+  }
+
+  const actor = resolveActingAdminAddress(req);
+  const override = setWithdrawalLimitOverride(walletAddress, reason, actor, ttlSeconds);
+
+  await recordAdminAuditLog(req, 'withdrawal.limit.override.grant', 201, {
+    walletAddress: override.wallet,
+    reason: override.reason,
+    expiresAt: override.expiresAt,
+    actor,
+  });
+
+  res.status(201).json({ override });
+});
+
+/**
+ * GET /admin/withdrawal-limits/audit
+ * Lists recent blocked and overridden withdrawal attempts.
+ */
+app.get('/admin/withdrawal-limits/audit', validateApiKey, (req: Request, res: Response) => {
+  const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 50;
+  res.status(200).json({
+    entries: listWithdrawalLimitAuditEntries(Number.isFinite(limit) ? limit : 50),
+  });
+});
+
 // ─── Allowlist Admin Endpoints (Issue #375) ──────────────────────────────────
 
 /**
@@ -1714,6 +1776,43 @@ app.post('/admin/webhooks', validateApiKey, (req: Request, res: Response) => {
 });
 
 /**
+ * POST /admin/webhooks/:id/verify - run challenge-response verification for an endpoint
+ */
+app.post('/admin/webhooks/:id/verify', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    const endpoint = await verifyWebhookEndpoint(req.params.id);
+    if (!endpoint) {
+      res.status(404).json({
+        error: 'Not Found',
+        status: 404,
+        message: 'Webhook endpoint not found',
+      });
+      return;
+    }
+
+    await recordAdminAuditLog(req, 'webhook.verify', endpoint.verificationStatus === 'verified' ? 200 : 422, {
+      endpointId: endpoint.id,
+      verificationStatus: endpoint.verificationStatus,
+      lastVerificationError: endpoint.lastVerificationError,
+    });
+
+    res.status(endpoint.verificationStatus === 'verified' ? 200 : 422).json({
+      message:
+        endpoint.verificationStatus === 'verified'
+          ? 'Webhook endpoint verified'
+          : 'Webhook endpoint verification failed',
+      endpoint,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to verify webhook endpoint',
+    });
+  }
+});
+
+/**
  * PATCH /admin/webhooks/:id - update webhook endpoint
  */
 app.patch('/admin/webhooks/:id', validateApiKey, (req: Request, res: Response) => {
@@ -1807,6 +1906,56 @@ app.post('/admin/webhooks/:id/restore', validateApiKey, async (req: Request, res
     message: 'Webhook endpoint restored',
     endpoint,
   });
+});
+
+/**
+ * GET /admin/webhooks/dead-letter - list permanently failed webhook deliveries
+ */
+app.get('/admin/webhooks/dead-letter', validateApiKey, (req: Request, res: Response) => {
+  const endpointId = typeof req.query.endpointId === 'string' ? req.query.endpointId : undefined;
+  const eventType = typeof req.query.eventType === 'string' ? req.query.eventType : undefined;
+  const start = typeof req.query.start === 'string' ? req.query.start : undefined;
+  const end = typeof req.query.end === 'string' ? req.query.end : undefined;
+  const limit = parseInt(String(req.query.limit || '100'), 10);
+
+  res.status(200).json({
+    deadLetters: listWebhookDeadLetters({
+      endpointId,
+      eventType: eventType as any,
+      start,
+      end,
+      limit,
+    }),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * POST /admin/webhooks/dead-letter/:id/retry - re-queue a dead-letter delivery
+ */
+app.post('/admin/webhooks/dead-letter/:id/retry', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    const entry = await retryWebhookDeadLetter(req.params.id);
+    if (!entry) {
+      res.status(404).json({
+        error: 'Not Found',
+        status: 404,
+        message: 'Dead-letter entry not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Dead-letter entry re-queued for delivery',
+      deadLetter: entry,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to retry dead-letter entry',
+    });
+  }
 });
 
 /**

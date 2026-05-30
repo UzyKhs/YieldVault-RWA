@@ -27,7 +27,8 @@ import { getApyHistory } from './apySnapshot';
 import { cacheMiddleware } from './middleware/cache';
 import { requireAuth, AuthenticatedRequest } from './auth';
 import { normalizeWalletAddress } from './walletUtils';
-import { validateApiKey, hasRequiredApiKeyRole } from './middleware/apiKeyAuth';
+import { validateApiKey } from './middleware/apiKeyAuth';
+import { hasPermission, Permission } from './middleware/rbac';
 import {
   buildExportMetadataHeaderValue,
   recordExportJob,
@@ -332,11 +333,12 @@ function authenticateTransactionExport(req: ExportRequest, res: Response, next: 
   const authHeader = req.get('Authorization') || '';
   if (authHeader.startsWith('ApiKey ')) {
     validateApiKey(req, res, () => {
-      if (!hasRequiredApiKeyRole(req, 'admin')) {
+      if (!hasPermission(req, Permission.EXPORTS_WRITE)) {
         res.status(403).json({
           error: 'Forbidden',
           status: 403,
-          message: 'Admin API key is required for this export',
+          message: 'Operator role or higher is required for admin transaction export',
+          requiredPermission: Permission.EXPORTS_WRITE,
         });
         return;
       }

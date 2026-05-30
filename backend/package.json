@@ -25,6 +25,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@stellar/stellar-base": "^14.0.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.218.0",
     "@opentelemetry/instrumentation-express": "^0.66.0",
     "@opentelemetry/instrumentation-http": "^0.218.0",

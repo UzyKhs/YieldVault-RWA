@@ -12,6 +12,7 @@ import { referralService } from './referralService';
 import { getPrismaClient } from './prismaClient';
 import { emitTransactionEvent, TransactionEventType } from './webhookDelivery';
 import { validate, VaultOperationSchema } from './middleware/validate';
+import { requireSignedWalletAction } from './middleware/walletSignedAction';
 import crypto from 'crypto';
 
 const router = Router();
@@ -218,8 +219,13 @@ async function handleVaultOperation(
  * Accepts optional Idempotency-Key header for deduplication.
  * Requires wallet address to be on the private beta allowlist (Issue #375).
  */
-router.post('/deposits', writesLimiter, allowlistMiddleware, validate({ body: VaultOperationSchema }), (req: Request, res: Response) =>
-  handleVaultOperation(req, res, 'deposit'),
+router.post(
+  '/deposits',
+  writesLimiter,
+  requireSignedWalletAction('deposit'),
+  allowlistMiddleware,
+  validate({ body: VaultOperationSchema }),
+  (req: Request, res: Response) => handleVaultOperation(req, res, 'deposit'),
 );
 
 /**
@@ -227,8 +233,13 @@ router.post('/deposits', writesLimiter, allowlistMiddleware, validate({ body: Va
  * Accepts optional Idempotency-Key header for deduplication.
  * Requires wallet address to be on the private beta allowlist (Issue #375).
  */
-router.post('/withdrawals', writesLimiter, allowlistMiddleware, validate({ body: VaultOperationSchema }), (req: Request, res: Response) =>
-  handleVaultOperation(req, res, 'withdrawal'),
+router.post(
+  '/withdrawals',
+  writesLimiter,
+  requireSignedWalletAction('withdrawal'),
+  allowlistMiddleware,
+  validate({ body: VaultOperationSchema }),
+  (req: Request, res: Response) => handleVaultOperation(req, res, 'withdrawal'),
 );
 
 // ─── Feature-flagged v2 endpoints ────────────────────────────────────────────
@@ -238,8 +249,13 @@ router.post('/withdrawals', writesLimiter, allowlistMiddleware, validate({ body:
  * Gated behind the "deposit-v2" feature flag.
  * Supports per-wallet targeting via x-wallet-address header or body.walletAddress.
  */
-router.post('/deposits/v2', writesLimiter, requireFlag('deposit-v2'), validate({ body: VaultOperationSchema }), (req: Request, res: Response) =>
-  handleVaultOperation(req, res, 'deposit'),
+router.post(
+  '/deposits/v2',
+  writesLimiter,
+  requireSignedWalletAction('deposit'),
+  requireFlag('deposit-v2'),
+  validate({ body: VaultOperationSchema }),
+  (req: Request, res: Response) => handleVaultOperation(req, res, 'deposit'),
 );
 
 /**

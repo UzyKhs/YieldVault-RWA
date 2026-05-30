@@ -107,6 +107,8 @@ export const en = {
     pausedHidden: "Paused (tab hidden)",
     pausedOffline: "Paused (offline)",
     pausedManual: "Paused",
+    staleData: "Data may be stale",
+    staleAgo: "Last updated {{age}} ago",
   },
   timeline: {
     loading: "Loading activity...",
