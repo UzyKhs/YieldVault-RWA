@@ -1,5 +1,6 @@
 import request from 'supertest';
 import app from '../index';
+import { VALID_TEST_WALLET } from './setup';
 
 describe('Schema validation middleware', () => {
   // ─── POST /api/v1/auth/login ──────────────────────────────────────────────
@@ -23,14 +24,14 @@ describe('Schema validation middleware', () => {
     it('rejects unknown fields with 400', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVWX', extra: 'field' });
+        .send({ walletAddress: VALID_TEST_WALLET, extra: 'field' });
       expect(res.status).toBe(400);
     });
 
     it('accepts a valid Stellar wallet address', async () => {
       const res = await request(app)
         .post('/api/v1/auth/login')
-        .send({ walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVWX' });
+        .send({ walletAddress: VALID_TEST_WALLET });
       expect(res.status).toBe(200);
     });
   });
@@ -65,7 +66,7 @@ describe('Schema validation middleware', () => {
     const validPayload = {
       amount: 100,
       asset: 'USDC',
-      walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVWX',
+      walletAddress: VALID_TEST_WALLET,
     };
 
     it('rejects missing required fields with 400', async () => {
@@ -125,7 +126,7 @@ describe('Schema validation middleware', () => {
     const validPayload = {
       amount: 50,
       asset: 'USDC',
-      walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVWX',
+      walletAddress: VALID_TEST_WALLET,
     };
 
     it('rejects missing walletAddress with 400', async () => {

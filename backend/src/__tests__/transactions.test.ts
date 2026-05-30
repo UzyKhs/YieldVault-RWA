@@ -1,8 +1,9 @@
 import request from 'supertest';
 import app from '../index';
 import { registerApiKey } from '../middleware/apiKeyAuth';
+import { VALID_TEST_WALLET, SECOND_TEST_WALLET } from './setup';
 
-const DEFAULT_WALLET = 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567';
+const DEFAULT_WALLET = VALID_TEST_WALLET;
 
 async function issueAccessToken(walletAddress: string): Promise<string> {
   const response = await request(app).post('/api/v1/auth/login').send({ walletAddress });
@@ -117,7 +118,7 @@ describe('GET /api/v1/transactions', () => {
   });
 
   it('rejects export when authenticated user tries to export another wallet', async () => {
-    const token = await issueAccessToken('GUSERWALLET123');
+    const token = await issueAccessToken(SECOND_TEST_WALLET);
     const response = await request(app)
       .get(`/api/v1/vault/transactions/export?format=json&walletAddress=${encodeURIComponent(DEFAULT_WALLET)}`)
       .set('Authorization', `Bearer ${token}`);
@@ -151,7 +152,7 @@ describe('GET /api/v1/transactions', () => {
 describe('GET /api/v1/vault/transactions/export', () => {
   it('exports the authenticated user transaction history as JSON', async () => {
     const login = await request(app).post('/api/v1/auth/login').send({
-      walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+      walletAddress: VALID_TEST_WALLET,
     });
 
     const response = await request(app)
@@ -164,17 +165,17 @@ describe('GET /api/v1/vault/transactions/export', () => {
     expect(Array.isArray(response.body.data)).toBe(true);
     expect(response.body.data.length).toBeGreaterThan(0);
     response.body.data.forEach((transaction: { walletAddress: string }) => {
-      expect(transaction.walletAddress).toBe('GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567');
+      expect(transaction.walletAddress).toBe(VALID_TEST_WALLET);
     });
   });
 
   it('rejects exporting a different wallet for a bearer-authenticated user', async () => {
     const login = await request(app).post('/api/v1/auth/login').send({
-      walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+      walletAddress: VALID_TEST_WALLET,
     });
 
     const response = await request(app)
-      .get('/api/v1/vault/transactions/export?format=json&walletAddress=GDIFFERENTWALLET123456789')
+      .get(`/api/v1/vault/transactions/export?format=json&walletAddress=${encodeURIComponent(SECOND_TEST_WALLET)}`)
       .set('Authorization', `Bearer ${login.body.accessToken}`);
 
     expect(response.status).toBe(403);
@@ -191,7 +192,7 @@ describe('GET /api/v1/vault/transactions/export', () => {
 
     const response = await request(app)
       .get(
-        `/api/v1/vault/transactions/export?format=csv&walletAddress=GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
+        `/api/v1/vault/transactions/export?format=csv&walletAddress=${encodeURIComponent(VALID_TEST_WALLET)}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
       )
       .set('Authorization', `ApiKey ${apiKey}`);
 

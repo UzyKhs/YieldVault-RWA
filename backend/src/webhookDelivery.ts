@@ -61,6 +61,23 @@ export interface WebhookDeliveryPage {
   hasNextPage: boolean;
 }
 
+export interface WebhookDeadLetterRecord {
+  id: string;
+  endpointId: string;
+  endpointUrl: string;
+  eventType: TransactionEventType;
+  payload: TransactionEventPayload;
+  attempts: number;
+  lastError?: string;
+  originalDeliveryId?: string;
+  status: 'dead-letter' | 'requeued' | 'delivered';
+  createdAt: string;
+  updatedAt: string;
+  retriedAt?: string;
+}
+
+const deadLetters: WebhookDeadLetterRecord[] = [];
+
 interface RegisterWebhookInput {
   url: string;
   eventTypes?: TransactionEventType[];
@@ -78,7 +95,7 @@ const endpoints = new Map<string, InternalWebhookEndpoint>();
 const deliveries: WebhookDeliveryRecord[] = [];
 let persistenceInitialized = false;
 
-const maxAttempts = parseInt(process.env.WEBHOOK_MAX_ATTEMPTS || '3', 10);
+const getMaxAttempts = (): number => parseInt(process.env.WEBHOOK_MAX_ATTEMPTS || '3', 10);
 const deliveryTimeoutMs = parseInt(process.env.WEBHOOK_DELIVERY_TIMEOUT_MS || '5000', 10);
 const retryBaseDelayMs = parseInt(process.env.WEBHOOK_RETRY_BASE_DELAY_MS || '500', 10);
 const deliveryRetention = parseInt(process.env.WEBHOOK_DELIVERY_RETENTION || '200', 10);
@@ -239,7 +256,7 @@ export function getWebhookDeliveryMetrics() {
     delivered,
     failed,
     pending,
-    maxAttempts,
+    maxAttempts: getMaxAttempts(),
     deliveryTimeoutMs,
   };
 }
@@ -247,8 +264,105 @@ export function getWebhookDeliveryMetrics() {
 export function resetWebhookState(): void {
   endpoints.clear();
   deliveries.length = 0;
+  deadLetters.length = 0;
   persistenceInitialized = false;
   void clearPersistedWebhookEndpoints();
+}
+
+export function listWebhookDeadLetters(filters: {
+  endpointId?: string;
+  eventType?: TransactionEventType;
+  start?: string;
+  end?: string;
+  limit?: number;
+} = {}): WebhookDeadLetterRecord[] {
+  const limit = Math.max(1, Math.min(filters.limit ?? 100, 500));
+  return deadLetters
+    .filter((entry) => {
+      if (filters.endpointId && entry.endpointId !== filters.endpointId) {
+        return false;
+      }
+      if (filters.eventType && entry.eventType !== filters.eventType) {
+        return false;
+      }
+      if (filters.start && entry.createdAt < filters.start) {
+        return false;
+      }
+      if (filters.end && entry.createdAt > filters.end) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .slice(0, limit);
+}
+
+export async function retryWebhookDeadLetter(id: string): Promise<WebhookDeadLetterRecord | null> {
+  const entry = deadLetters.find((item) => item.id === id);
+  if (!entry) {
+    return null;
+  }
+
+  const endpoint = endpoints.get(entry.endpointId);
+  if (!endpoint || endpoint.deletedAt) {
+    entry.status = 'dead-letter';
+    entry.lastError = 'Endpoint not found for dead-letter retry';
+    entry.updatedAt = new Date().toISOString();
+    return entry;
+  }
+
+  const now = new Date().toISOString();
+  const delivery: WebhookDeliveryRecord = {
+    id: `whd_${crypto.randomBytes(8).toString('hex')}`,
+    endpointId: entry.endpointId,
+    endpointUrl: entry.endpointUrl,
+    eventType: entry.eventType,
+    status: 'pending',
+    attempts: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  deliveries.unshift(delivery);
+  entry.status = 'requeued';
+  entry.retriedAt = now;
+  entry.updatedAt = now;
+  entry.attempts += 1;
+
+  await deliverWithRetry(endpoint, delivery, entry.payload, 1);
+
+  if (delivery.status === 'delivered') {
+    entry.status = 'delivered';
+  } else if (delivery.status === 'failed') {
+    entry.status = 'dead-letter';
+    entry.lastError = delivery.lastError;
+  }
+
+  entry.updatedAt = new Date().toISOString();
+  return entry;
+}
+
+async function persistWebhookDeadLetter(
+  entry: WebhookDeadLetterRecord,
+  envelope: { eventType: TransactionEventType; sentAt: string; payload: TransactionEventPayload },
+): Promise<void> {
+  try {
+    await prisma.webhookDeadLetter.create({
+      data: {
+        id: entry.id,
+        endpointId: entry.endpointId,
+        endpointUrl: entry.endpointUrl,
+        eventType: entry.eventType,
+        payload: JSON.stringify(envelope),
+        attempts: entry.attempts,
+        lastError: entry.lastError ?? null,
+        originalDeliveryId: entry.originalDeliveryId ?? null,
+        status: entry.status,
+      },
+    });
+  } catch {
+    // Best-effort persistence for local/test environments.
+  }
 }
 
 export function createWebhookSignature(secret: string, payload: unknown): string {
@@ -388,7 +502,7 @@ async function deliverWithRetry(
     const normalized = error instanceof Error ? error.message : String(error);
     delivery.lastError = normalized;
 
-    if (attempt < maxAttempts) {
+    if (attempt < getMaxAttempts()) {
       const delayMs = calculateBackoffDelay(attempt);
       setTimeout(() => {
         void deliverWithRetry(endpoint, delivery, payload, attempt + 1);
@@ -398,6 +512,22 @@ async function deliverWithRetry(
 
     delivery.status = 'failed';
     delivery.updatedAt = new Date().toISOString();
+
+    const deadLetter: WebhookDeadLetterRecord = {
+      id: `whdl_${crypto.randomBytes(8).toString('hex')}`,
+      endpointId: endpoint.id,
+      endpointUrl: endpoint.url,
+      eventType: delivery.eventType,
+      payload,
+      attempts: delivery.attempts,
+      lastError: delivery.lastError,
+      originalDeliveryId: delivery.id,
+      status: 'dead-letter',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    deadLetters.unshift(deadLetter);
+    void persistWebhookDeadLetter(deadLetter, envelope);
   } finally {
     clearTimeout(timeout);
   }

@@ -4,6 +4,7 @@
 
 import request from 'supertest';
 import app from '../index';
+import { VALID_TEST_WALLET } from './setup';
 import {
   addAddress,
   removeAddress,
@@ -67,8 +68,8 @@ describe('Allowlist store', () => {
 // ─── Middleware integration tests ────────────────────────────────────────────
 
 describe('allowlistMiddleware – ALLOWLIST_ENABLED=true', () => {
-  const ALLOWED_WALLET = 'GTEST_ALLOWED_WALLET_ADDRESS_001';
-  const BLOCKED_WALLET = 'GBLOCKED_WALLET_999';
+  const ALLOWED_WALLET = VALID_TEST_WALLET;
+  const BLOCKED_WALLET = 'G345678ABCDEFGHIJKLMNOPQRSTUVWXYZ345678ABCDEFGHIJKLMNOPQR';
 
   beforeAll(() => {
     // Ensure feature is enabled
@@ -150,7 +151,7 @@ describe('allowlistMiddleware – ALLOWLIST_ENABLED=false', () => {
       .send({
         amount: '100',
         asset: 'USDC',
-        walletAddress: 'GANYONE',
+        walletAddress: VALID_TEST_WALLET,
       });
     // Feature disabled → allowlist check skipped → business logic runs
     expect([201, 503]).toContain(res.status);

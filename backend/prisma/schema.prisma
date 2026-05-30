@@ -168,3 +168,41 @@ model AdminActionReceipt {
   @@index([actor])
   @@index([timestamp])
 }
+
+model EmailQueue {
+  id          String    @id @default(uuid())
+  to          String
+  subject     String
+  text        String?
+  html        String?
+  status      String    @default("pending")
+  retryCount  Int       @default(0)
+  maxRetries  Int       @default(5)
+  nextRetryAt DateTime?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model WebhookDeadLetter {
+  id                 String   @id @default(uuid())
+  endpointId         String
+  endpointUrl        String
+  eventType          String
+  payload            String
+  attempts           Int
+  lastError          String?
+  originalDeliveryId String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  retriedAt          DateTime?
+  status             String   @default("dead-letter")
+
+  @@index([endpointId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([status])
+}

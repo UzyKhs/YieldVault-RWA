@@ -8,7 +8,7 @@ import { registerApiKey } from '../middleware/apiKeyAuth';
 describe('Backend governance', () => {
   const adminApiKey = 'admin-test-key';
   const superAdminApiKey = 'super-admin-test-key';
-  const targetWallet = 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567';
+  const targetWallet = 'G234567ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQ';
 
   beforeEach(() => {
     idempotencyStore.clear();
@@ -30,7 +30,7 @@ describe('Backend governance', () => {
     const payload = {
       amount: 250,
       asset: 'USDC',
-      walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+      walletAddress: 'G234567ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQ',
     };
 
     const first = await request(app)
@@ -56,7 +56,7 @@ describe('Backend governance', () => {
       .send({
         amount: 250,
         asset: 'USDC',
-        walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+        walletAddress: 'G234567ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQ',
       });
 
     const second = await request(app)
@@ -65,7 +65,7 @@ describe('Backend governance', () => {
       .send({
         amount: 300,
         asset: 'USDC',
-        walletAddress: 'GABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567',
+        walletAddress: 'G234567ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQ',
       });
 
     expect(first.status).toBe(201);

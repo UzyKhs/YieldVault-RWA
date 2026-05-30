@@ -11,8 +11,9 @@ import {
   SessionRevokedError,
   InvalidRefreshTokenError,
 } from '../auth';
+import { VALID_TEST_WALLET } from './setup';
 
-const TEST_WALLET = 'GTEST_WALLET_ADDRESS_JWT_001';
+const TEST_WALLET = VALID_TEST_WALLET;
 
 // ─── issueTokenPair unit tests ───────────────────────────────────────────────
 

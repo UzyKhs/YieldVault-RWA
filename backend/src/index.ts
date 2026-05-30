@@ -88,6 +88,8 @@ import {
   getWebhookDeliveryMetrics,
   createWebhookSignature,
   verifyWebhookSignature,
+  listWebhookDeadLetters,
+  retryWebhookDeadLetter,
 } from './webhookDelivery';
 import {
   maintenanceModeMiddleware,
@@ -784,7 +786,7 @@ app.get('/admin/maintenance', validateApiKey, (_req: Request, res: Response) => 
  * Body: { enabled: boolean, reason?: string, retryAfterSeconds?: number }
  * Requires API key authentication.
  */
-app.post('/admin/maintenance', validateApiKey, (req: Request, res: Response) => {
+app.post('/admin/maintenance', validateApiKey, async (req: Request, res: Response) => {
   const { enabled, reason, retryAfterSeconds } = req.body;
   if (typeof enabled !== 'boolean') {
     res.status(400).json({
@@ -972,7 +974,7 @@ app.post('/admin/events/replay', validateApiKey, async (req: Request, res: Respo
  * Requires API key authentication.
  * Body: { "walletAddress": "G..." }
  */
-app.post('/admin/allowlist/add', validateApiKey, (req: Request, res: Response) => {
+app.post('/admin/allowlist/add', validateApiKey, async (req: Request, res: Response) => {
   const { walletAddress } = req.body;
   if (!walletAddress || typeof walletAddress !== 'string') {
     res.status(400).json({ error: 'Missing or invalid walletAddress in request body' });
@@ -1564,6 +1566,56 @@ app.post('/admin/webhooks/:id/restore', validateApiKey, async (req: Request, res
     message: 'Webhook endpoint restored',
     endpoint,
   });
+});
+
+/**
+ * GET /admin/webhooks/dead-letter - list permanently failed webhook deliveries
+ */
+app.get('/admin/webhooks/dead-letter', validateApiKey, (req: Request, res: Response) => {
+  const endpointId = typeof req.query.endpointId === 'string' ? req.query.endpointId : undefined;
+  const eventType = typeof req.query.eventType === 'string' ? req.query.eventType : undefined;
+  const start = typeof req.query.start === 'string' ? req.query.start : undefined;
+  const end = typeof req.query.end === 'string' ? req.query.end : undefined;
+  const limit = parseInt(String(req.query.limit || '100'), 10);
+
+  res.status(200).json({
+    deadLetters: listWebhookDeadLetters({
+      endpointId,
+      eventType: eventType as any,
+      start,
+      end,
+      limit,
+    }),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * POST /admin/webhooks/dead-letter/:id/retry - re-queue a dead-letter delivery
+ */
+app.post('/admin/webhooks/dead-letter/:id/retry', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    const entry = await retryWebhookDeadLetter(req.params.id);
+    if (!entry) {
+      res.status(404).json({
+        error: 'Not Found',
+        status: 404,
+        message: 'Dead-letter entry not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Dead-letter entry re-queued for delivery',
+      deadLetter: entry,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to retry dead-letter entry',
+    });
+  }
 });
 
 /**

@@ -231,7 +231,7 @@ export class LatencyMonitoringService {
     }
 
     // Convert dynamic paths like /api/v1/vault/123 to /api/v1/vault/:id
-    if (endpoint.match(/^\/api\/v1\/vault\/[^\/]+$/)) {
+    if (endpoint.match(/^\/api\/v1\/vault\/[^/]+$/)) {
       return '/api/v1/vault/:id';
     }
 

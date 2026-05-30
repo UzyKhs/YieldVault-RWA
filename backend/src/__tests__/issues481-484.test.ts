@@ -18,7 +18,7 @@ import { backfillApySnapshots } from '../apySnapshot';
 import { parseUtcDateRange, DateRangeParseError } from '../dateRange';
 
 const ADMIN_KEY = process.env.ADMIN_API_KEY || 'test-admin-key';
-const AUTH_HEADER = { 'x-api-key': ADMIN_KEY };
+const AUTH_HEADER = { Authorization: `ApiKey ${ADMIN_KEY}` };
 
 // ─── #481: Maintenance Mode Gate ─────────────────────────────────────────────
 

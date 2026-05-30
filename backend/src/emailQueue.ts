@@ -1,5 +1,5 @@
 import { PrismaClient, EmailQueue } from '@prisma/client';
-import { prisma } from './prismaClient';
+import { getPrismaClient } from './prismaClient';
 import { emailService, EmailOptions } from './emailService';
 import { logger } from './middleware/structuredLogging';
 
@@ -9,7 +9,7 @@ export class EmailQueueService {
   private isProcessing = false;
 
   constructor() {
-    this.prisma = prisma;
+    this.prisma = getPrismaClient();
   }
 
   async enqueueEmail(options: EmailOptions): Promise<EmailQueue> {
@@ -72,8 +72,8 @@ export class EmailQueueService {
       const success = await emailService.sendEmailDirectly({
         to: email.to,
         subject: email.subject,
-        text: email.text,
-        html: email.html,
+        text: email.text ?? '',
+        html: email.html ?? '',
       });
 
       if (success) {
