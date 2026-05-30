@@ -2,7 +2,7 @@ import request from 'supertest';
 import app from '../index';
 import { getPrismaClient, disconnectPrismaClient } from '../prismaClient';
 import { referralService } from '../referralService';
-import { VALID_TEST_WALLET, SECOND_TEST_WALLET } from './setup';
+import { VALID_TEST_WALLET, SECOND_TEST_WALLET, THIRD_TEST_WALLET } from './setup';
 
 // Use the centralized Prisma Client instance
 const getPrisma = () => getPrismaClient();
@@ -92,14 +92,14 @@ describe('Referral System Integration', () => {
     });
 
     it('should return 404 for wallet with no referral activity', async () => {
-      const response = await request(app).get('/api/v1/referrals/G_UNKNOWN_WALLET');
+      const response = await request(app).get(`/api/v1/referrals/${THIRD_TEST_WALLET}`);
       expect(response.status).toBe(404);
     });
   });
 
   describe('Reward Calculation Precision', () => {
     it('should handle small yield values with precision', async () => {
-      const smallReferredWallet = 'G_SMALL_REFERRED';
+      const smallReferredWallet = THIRD_TEST_WALLET;
       
       // Record small deposit
       await request(app)

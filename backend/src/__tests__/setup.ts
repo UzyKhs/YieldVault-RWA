@@ -53,3 +53,7 @@ export const VALID_TEST_WALLET =
 /** Second valid wallet for multi-wallet test scenarios. */
 export const SECOND_TEST_WALLET =
   'G345678ABCDEFGHIJKLMNOPQRSTUVWXYZ345678ABCDEFGHIJKLMNOPQR';
+
+/** Third valid wallet for multi-wallet test scenarios. */
+export const THIRD_TEST_WALLET =
+  'G456789ABCDEFGHIJKLMNOPQRSTUVWXYZ456789ABCDEFGHIJKLMNOPQR';
