@@ -64,6 +64,8 @@ For a comprehensive overview of the smart contract architecture, module responsi
 
 For detailed setup instructions, prerequisites, and troubleshooting, see **[Local Development Quickstart](./docs/LOCAL_DEVELOPMENT_QUICKSTART.md)**.
 
+For test ownership, fixture placement, and coverage expectations across unit, integration, and E2E scopes, see **[Testing Strategy](./docs/TESTING_STRATEGY.md)**.
+
 ## API Documentation
 
 Generate contract and frontend API docs:
