@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-export type ApiKeyRole = 'admin' | 'super-admin';
+export type ApiKeyRole = 'viewer' | 'operator' | 'admin' | 'super-admin';
 
 export interface ApiKeyMetadata {
   createdAt: Date;
@@ -128,20 +128,28 @@ export function rotateApiKey(oldHash: string, newKey: string): string | null {
   return newHash;
 }
 
+const ROLE_RANK: Record<ApiKeyRole, number> = {
+  viewer: 0,
+  operator: 1,
+  admin: 2,
+  'super-admin': 3,
+};
+
 export function hasRequiredApiKeyRole(
   req: Request,
   requiredRole: ApiKeyRole,
 ): boolean {
   const role = req.authApiKeyRole || 'admin';
-  if (requiredRole === 'admin') {
-    return true;
-  }
-
-  return role === 'super-admin';
+  return ROLE_RANK[role] >= ROLE_RANK[requiredRole];
 }
 
 export function normalizeApiKeyRole(raw: unknown): ApiKeyRole | null {
-  if (raw === 'admin' || raw === 'super-admin') {
+  if (
+    raw === 'viewer' ||
+    raw === 'operator' ||
+    raw === 'admin' ||
+    raw === 'super-admin'
+  ) {
     return raw;
   }
 

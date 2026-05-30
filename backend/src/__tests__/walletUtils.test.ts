@@ -24,14 +24,12 @@ describe('Wallet Utilities', () => {
 
   describe('isValidStellarAddress', () => {
     it('should return true for valid uppercase address', () => {
-      const address = 'GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUV';
-      // Total length 56
-      const validAddress = 'GDH36P55N6WQX3QJ6F7E3S2C7Z6Z5Q5X4Y3W2V1U0T9S8R7Q6P5O4N3M';
+      const validAddress = 'G234567ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQ';
       expect(isValidStellarAddress(validAddress)).toBe(true);
     });
 
     it('should return true for valid lowercase address', () => {
-      const validAddress = 'gdh36p55n6wqx3qj6f7e3s2c7z6z5q5x4y3w2v1u0t9s8r7q6p5o4n3m';
+      const validAddress = 'g234567abcdefghijklmnopqrstuvwxyz234567abcdefghijklmnopq';
       expect(isValidStellarAddress(validAddress)).toBe(true);
     });
 

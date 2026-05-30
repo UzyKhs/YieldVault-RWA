@@ -1,0 +1,156 @@
+/* ─── OnboardingPanel ─────────────────────────────────────────────────────── */
+
+.onboarding-panel {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8) var(--space-8);
+  backdrop-filter: blur(12px);
+  animation: emptyStateFadeIn 0.4s ease-out both;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.onboarding-panel-header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.onboarding-panel-title {
+  font-size: var(--text-xl);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-2);
+}
+
+.onboarding-panel-subtitle {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ─── Steps list ──────────────────────────────────────────────────────────── */
+
+.onboarding-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.onboarding-step {
+  display: grid;
+  grid-template-columns: 40px 40px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-glass);
+  background: var(--bg-card);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+/* Active step */
+.onboarding-step--active {
+  border-color: rgba(0, 240, 255, 0.4);
+  background: rgba(0, 240, 255, 0.04);
+}
+
+/* Completed step */
+.onboarding-step--completed {
+  opacity: 0.6;
+}
+
+/* Future (locked) step */
+.onboarding-step--future {
+  opacity: 0.45;
+}
+
+/* ─── Step indicator (number / check) ────────────────────────────────────── */
+
+.onboarding-step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--border-glass);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.onboarding-step--active .onboarding-step-indicator {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+.onboarding-step--completed .onboarding-step-indicator {
+  border-color: var(--accent-cyan);
+  background: var(--accent-cyan-dim);
+  color: var(--accent-cyan);
+}
+
+.onboarding-step-check,
+.onboarding-step-number {
+  line-height: 1;
+}
+
+/* ─── Step icon ───────────────────────────────────────────────────────────── */
+
+.onboarding-step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.onboarding-step--active .onboarding-step-icon {
+  color: var(--accent-cyan);
+}
+
+/* ─── Step content ────────────────────────────────────────────────────────── */
+
+.onboarding-step-title {
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin: 0 0 var(--space-1);
+}
+
+.onboarding-step-description {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: var(--leading-relaxed);
+}
+
+/* ─── Step action button ──────────────────────────────────────────────────── */
+
+.onboarding-step-action {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .onboarding-panel {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .onboarding-step {
+    grid-template-columns: 32px 32px 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .onboarding-step-action {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}

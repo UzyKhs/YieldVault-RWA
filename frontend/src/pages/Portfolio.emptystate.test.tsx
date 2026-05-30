@@ -1,9 +1,10 @@
-﻿import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Portfolio from "./Portfolio";
 import { ToastProvider } from "../context/ToastContext";
+import { PreferencesProvider } from "../context/PreferencesContext";
 import * as portfolioApi from "../lib/portfolioApi";
 import type { PortfolioHolding } from "../lib/portfolioApi";
 
@@ -36,9 +37,11 @@ function renderPortfolio(walletAddress: string | null) {
   return render(
     <MemoryRouter>
       <QueryClientProvider client={queryClient}>
-        <ToastProvider>
-          <Portfolio walletAddress={walletAddress} />
-        </ToastProvider>
+        <PreferencesProvider>
+          <ToastProvider>
+            <Portfolio walletAddress={walletAddress} />
+          </ToastProvider>
+        </PreferencesProvider>
       </QueryClientProvider>
     </MemoryRouter>,
   );
@@ -117,12 +120,13 @@ describe("Portfolio â€” empty state", () => {
     expect(screen.queryByText("Your portfolio is empty.")).not.toBeInTheDocument();
   });
 
-  it("shows the wallet-not-connected message when no wallet is provided", () => {
+  it("shows the onboarding panel when no wallet is provided", () => {
     renderPortfolio(null);
 
     expect(
-      screen.getByText(/Please connect your wallet to view your portfolio\./i),
+      screen.getByRole("region", { name: /Getting started guide/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Connect Your Wallet")).toBeInTheDocument();
     expect(screen.queryByText("Your portfolio is empty.")).not.toBeInTheDocument();
   });
 });

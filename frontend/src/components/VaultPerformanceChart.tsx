@@ -16,6 +16,9 @@ import Skeleton, { ChartSkeleton } from "./Skeleton";
 import { type TimeRange, getNow, getCutoffDate } from "../lib/dateUtils";
 import { usePreferencesContext } from "../context/PreferencesContext";
 import { formatDate, formatNumber } from "../lib/formatters";
+import RefreshControl from "./RefreshControl";
+import { useQueryWithPolling, POLLING_INTERVALS } from "../hooks/useQueryWithPolling";
+import { useStaleIndicator } from "../hooks/useStaleIndicator";
 
 const VaultPerformanceTooltip = ({
   active,
@@ -50,7 +53,12 @@ const VaultPerformanceTooltip = ({
 }
 
 const VaultPerformanceChart: React.FC = () => {
-  const { data: rawData = [], isLoading } = useVaultHistory();
+  const historyQuery = useVaultHistory();
+  const { query, polling, lastUpdated } = useQueryWithPolling(historyQuery, {
+    interval: POLLING_INTERVALS.slow,
+  });
+  const { data: rawData = [], isLoading, isFetching } = query;
+  const { isStale, ageText } = useStaleIndicator(lastUpdated);
   const { preferences } = usePreferencesContext();
   const [timeRange, setTimeRange] = useState<TimeRange>("ALL");
   const isTest = process.env.NODE_ENV === 'test';
@@ -71,7 +79,7 @@ const VaultPerformanceChart: React.FC = () => {
         <ChartSkeleton />
       ) : (
         <>
-          <div className="flex justify-between items-start" style={{ marginBottom: "24px" }}>
+          <div className="flex justify-between items-start" style={{ marginBottom: "16px" }}>
             <div>
               <h3
                 style={{
@@ -111,6 +119,37 @@ const VaultPerformanceChart: React.FC = () => {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Per-widget refresh control + stale indicator */}
+          <div style={{ marginBottom: "16px" }}>
+            <RefreshControl
+              isPolling={polling.isPolling}
+              isPaused={polling.isPaused}
+              pauseReason={polling.pauseReason}
+              onPause={polling.pause}
+              onResume={polling.resume}
+              onRefresh={polling.forceRefresh}
+              isRefetching={isFetching}
+              lastUpdated={lastUpdated ?? undefined}
+            />
+            {isStale && ageText && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  marginTop: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  fontSize: "0.75rem",
+                  color: "var(--text-warning, #f59e0b)",
+                }}
+              >
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--text-warning, #f59e0b)", flexShrink: 0 }} />
+                Data may be stale · {ageText}
+              </div>
+            )}
           </div>
 
           <div style={{ flex: 1, minHeight: "260px", position: "relative" }}>

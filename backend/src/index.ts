@@ -20,6 +20,13 @@ import {
 import { idempotencyStore } from './idempotency';
 import { createAdminAuditMiddleware, getAuditLogs, getAuditLogMetrics } from './auditLog';
 import { recordAdminAuditLog } from './adminAudit';
+import {
+  startImpersonationSession,
+  endImpersonationSession,
+  validateImpersonationSession,
+  listImpersonationSessions,
+  resolveImpersonationSessionContext,
+} from './impersonationSessionService';
 import { generateAdminReceipt, getAdminReceipt, listAdminReceipts, verifyReceiptSignature } from './adminReceipt';
 import { startApySnapshotScheduler } from './apySnapshot';
 import { sorobanCircuitBreaker } from './circuitBreaker';
@@ -29,6 +36,10 @@ import { corsMiddleware } from './middleware/cors';
 import { geofencingMiddleware } from './middleware/geofencing';
 import { cacheMiddleware, invalidateCache, getCacheStats } from './middleware/cache';
 import { validate, LoginSchema, RefreshSchema } from './middleware/validate';
+import {
+  setWithdrawalLimitOverride,
+  listWithdrawalLimitAuditEntries,
+} from './middleware/withdrawalDailyLimit';
 import {
   validateApiKey,
   authenticateApiKeyValue,
@@ -79,6 +90,7 @@ import { latencyMonitoringService } from './latencyMonitoring';
 import { startEventPollingService, stopEventPollingService } from './eventPollingService';
 import { prisma, getPrismaRuntimeConfig } from './prisma';
 import {
+  verifyWebhookEndpoint,
   registerWebhookEndpoint,
   updateWebhookEndpoint,
   deleteWebhookEndpoint,
@@ -88,6 +100,8 @@ import {
   getWebhookDeliveryMetrics,
   createWebhookSignature,
   verifyWebhookSignature,
+  listWebhookDeadLetters,
+  retryWebhookDeadLetter,
 } from './webhookDelivery';
 import {
   maintenanceModeMiddleware,
@@ -784,7 +798,7 @@ app.get('/admin/maintenance', validateApiKey, (_req: Request, res: Response) => 
  * Body: { enabled: boolean, reason?: string, retryAfterSeconds?: number }
  * Requires API key authentication.
  */
-app.post('/admin/maintenance', validateApiKey, (req: Request, res: Response) => {
+app.post('/admin/maintenance', validateApiKey, async (req: Request, res: Response) => {
   const { enabled, reason, retryAfterSeconds } = req.body;
   if (typeof enabled !== 'boolean') {
     res.status(400).json({
@@ -964,6 +978,61 @@ app.post('/admin/events/replay', validateApiKey, async (req: Request, res: Respo
   }
 });
 
+/**
+ * POST /admin/withdrawal-limits/override
+ * Grants a temporary admin override for a wallet's daily withdrawal limit.
+ * Requires super-admin API key.
+ */
+app.post('/admin/withdrawal-limits/override', validateApiKey, async (req: Request, res: Response) => {
+  const walletAddress = typeof req.body?.walletAddress === 'string' ? req.body.walletAddress.trim() : '';
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  const ttlSeconds =
+    typeof req.body?.ttlSeconds === 'number' && req.body.ttlSeconds > 0
+      ? req.body.ttlSeconds
+      : 3600;
+
+  if (!walletAddress || !reason) {
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'walletAddress and reason are required',
+    });
+    return;
+  }
+
+  if (!hasRequiredApiKeyRole(req, 'super-admin')) {
+    res.status(403).json({
+      error: 'Forbidden',
+      status: 403,
+      message: 'Super-admin role is required to override withdrawal limits',
+    });
+    return;
+  }
+
+  const actor = resolveActingAdminAddress(req);
+  const override = setWithdrawalLimitOverride(walletAddress, reason, actor, ttlSeconds);
+
+  await recordAdminAuditLog(req, 'withdrawal.limit.override.grant', 201, {
+    walletAddress: override.wallet,
+    reason: override.reason,
+    expiresAt: override.expiresAt,
+    actor,
+  });
+
+  res.status(201).json({ override });
+});
+
+/**
+ * GET /admin/withdrawal-limits/audit
+ * Lists recent blocked and overridden withdrawal attempts.
+ */
+app.get('/admin/withdrawal-limits/audit', validateApiKey, (req: Request, res: Response) => {
+  const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 50;
+  res.status(200).json({
+    entries: listWithdrawalLimitAuditEntries(Number.isFinite(limit) ? limit : 50),
+  });
+});
+
 // ─── Allowlist Admin Endpoints (Issue #375) ──────────────────────────────────
 
 /**
@@ -972,7 +1041,7 @@ app.post('/admin/events/replay', validateApiKey, async (req: Request, res: Respo
  * Requires API key authentication.
  * Body: { "walletAddress": "G..." }
  */
-app.post('/admin/allowlist/add', validateApiKey, (req: Request, res: Response) => {
+app.post('/admin/allowlist/add', validateApiKey, async (req: Request, res: Response) => {
   const { walletAddress } = req.body;
   if (!walletAddress || typeof walletAddress !== 'string') {
     res.status(400).json({ error: 'Missing or invalid walletAddress in request body' });
@@ -1063,18 +1132,209 @@ app.get('/admin/allowlist', validateApiKey, (_req: Request, res: Response) => {
 });
 
 /**
- * GET /admin/impersonate/:wallet - inspect vault state as a specific wallet
+ * POST /admin/impersonate/sessions - start a time-bounded impersonation session
  * Requires super-admin API key.
  */
-app.get('/admin/impersonate/:wallet', validateApiKey, async (req: Request, res: Response) => {
-  const wallet = String(req.params.wallet || '').trim();
+app.post('/admin/impersonate/sessions', validateApiKey, async (req: Request, res: Response) => {
+  const actingAdminAddress = resolveActingAdminAddress(req);
+  const { actor, apiKeyHash, ipAddress, userAgent } = resolveImpersonationSessionContext(req);
+  const targetWallet = typeof req.body?.targetWallet === 'string' ? req.body.targetWallet.trim() : '';
+  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+
+  req.adminAuditActor = actingAdminAddress;
+  req.adminAuditMetadata = {
+    actingAdminAddress,
+    adminRole: req.authApiKeyRole || 'admin',
+    targetWallet: targetWallet || 'unknown',
+    impersonation: true,
+  };
+
+  if (!targetWallet || !reason) {
+    req.adminAuditAction = 'admin.impersonate.session.invalid';
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'targetWallet and reason are required',
+    });
+    return;
+  }
+
+  if (!hasRequiredApiKeyRole(req, 'super-admin')) {
+    req.adminAuditAction = 'admin.impersonate.session.denied';
+    res.status(403).json({
+      error: 'Forbidden',
+      status: 403,
+      message: 'Super-admin role is required for impersonation sessions',
+    });
+    return;
+  }
+
+  try {
+    const session = await startImpersonationSession({
+      actor: actingAdminAddress,
+      apiKeyHash,
+      targetWallet,
+      reason,
+      ipAddress,
+      userAgent,
+    });
+
+    req.adminAuditAction = 'admin.impersonate.session.started';
+    req.adminAuditMetadata = {
+      ...req.adminAuditMetadata,
+      sessionId: session.id,
+      expiresAt: session.expiresAt,
+    };
+
+    res.status(201).json({ session });
+  } catch (error) {
+    req.adminAuditAction = 'admin.impersonate.session.failed';
+    req.adminAuditMetadata = {
+      ...req.adminAuditMetadata,
+      error: error instanceof Error ? error.message : String(error),
+    };
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: 'Failed to start impersonation session',
+    });
+  }
+});
+
+/**
+ * GET /admin/impersonate/sessions - list active and historical impersonation sessions
+ * Requires super-admin API key.
+ */
+app.get('/admin/impersonate/sessions', validateApiKey, async (req: Request, res: Response) => {
   const actingAdminAddress = resolveActingAdminAddress(req);
 
   req.adminAuditActor = actingAdminAddress;
   req.adminAuditMetadata = {
     actingAdminAddress,
     adminRole: req.authApiKeyRole || 'admin',
+    impersonation: true,
+  };
+
+  if (!hasRequiredApiKeyRole(req, 'super-admin')) {
+    req.adminAuditAction = 'admin.impersonate.session.list.denied';
+    res.status(403).json({
+      error: 'Forbidden',
+      status: 403,
+      message: 'Super-admin role is required to list impersonation sessions',
+    });
+    return;
+  }
+
+  const statusRaw = typeof req.query.status === 'string' ? req.query.status : 'all';
+  const status =
+    statusRaw === 'active' || statusRaw === 'ended' || statusRaw === 'expired' ? statusRaw : 'all';
+  const actor = typeof req.query.actor === 'string' ? req.query.actor : undefined;
+  const targetWallet = typeof req.query.targetWallet === 'string' ? req.query.targetWallet : undefined;
+  const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 50;
+
+  try {
+    const sessions = await listImpersonationSessions({
+      status,
+      actor,
+      targetWallet,
+      limit: Number.isFinite(limit) && limit > 0 ? limit : 50,
+    });
+
+    req.adminAuditAction = 'admin.impersonate.session.list';
+    res.status(200).json({ sessions, count: sessions.length });
+  } catch (error) {
+    req.adminAuditAction = 'admin.impersonate.session.list.failed';
+    req.adminAuditMetadata = {
+      ...req.adminAuditMetadata,
+      error: error instanceof Error ? error.message : String(error),
+    };
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: 'Failed to list impersonation sessions',
+    });
+  }
+});
+
+/**
+ * DELETE /admin/impersonate/sessions/:id - end an active impersonation session
+ * Requires super-admin API key.
+ */
+app.delete('/admin/impersonate/sessions/:id', validateApiKey, async (req: Request, res: Response) => {
+  const actingAdminAddress = resolveActingAdminAddress(req);
+  const sessionId = String(req.params.id || '').trim();
+
+  req.adminAuditActor = actingAdminAddress;
+  req.adminAuditMetadata = {
+    actingAdminAddress,
+    adminRole: req.authApiKeyRole || 'admin',
+    sessionId: sessionId || 'unknown',
+    impersonation: true,
+  };
+
+  if (!sessionId) {
+    req.adminAuditAction = 'admin.impersonate.session.end.invalid';
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'session id is required',
+    });
+    return;
+  }
+
+  if (!hasRequiredApiKeyRole(req, 'super-admin')) {
+    req.adminAuditAction = 'admin.impersonate.session.end.denied';
+    res.status(403).json({
+      error: 'Forbidden',
+      status: 403,
+      message: 'Super-admin role is required to end impersonation sessions',
+    });
+    return;
+  }
+
+  try {
+    const session = await endImpersonationSession(sessionId, actingAdminAddress);
+    if (!session) {
+      req.adminAuditAction = 'admin.impersonate.session.end.not_found';
+      res.status(404).json({
+        error: 'Not Found',
+        status: 404,
+        message: 'Impersonation session not found or already expired',
+      });
+      return;
+    }
+
+    req.adminAuditAction = 'admin.impersonate.session.ended';
+    res.status(200).json({ session });
+  } catch (error) {
+    req.adminAuditAction = 'admin.impersonate.session.end.failed';
+    req.adminAuditMetadata = {
+      ...req.adminAuditMetadata,
+      error: error instanceof Error ? error.message : String(error),
+    };
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: 'Failed to end impersonation session',
+    });
+  }
+});
+
+/**
+ * GET /admin/impersonate/:wallet - inspect vault state as a specific wallet
+ * Requires super-admin API key and a valid non-expired impersonation session.
+ */
+app.get('/admin/impersonate/:wallet', validateApiKey, async (req: Request, res: Response) => {
+  const wallet = String(req.params.wallet || '').trim();
+  const actingAdminAddress = resolveActingAdminAddress(req);
+  const sessionId = String(req.get('x-impersonation-session-id') || '').trim();
+
+  req.adminAuditActor = actingAdminAddress;
+  req.adminAuditMetadata = {
+    actingAdminAddress,
+    adminRole: req.authApiKeyRole || 'admin',
     targetWallet: wallet || 'unknown',
+    sessionId: sessionId || undefined,
     impersonation: true,
   };
 
@@ -1098,11 +1358,56 @@ app.get('/admin/impersonate/:wallet', validateApiKey, async (req: Request, res: 
     return;
   }
 
+  if (!sessionId) {
+    req.adminAuditAction = 'admin.impersonate.session.required';
+    res.status(400).json({
+      error: 'Bad Request',
+      status: 400,
+      message: 'x-impersonation-session-id header is required',
+    });
+    return;
+  }
+
+  const validation = await validateImpersonationSession(sessionId, wallet, actingAdminAddress);
+  if (!validation.ok) {
+    const statusCode = validation.reason === 'not_found' ? 404 : 403;
+    req.adminAuditAction =
+      validation.reason === 'expired'
+        ? 'admin.impersonate.expired'
+        : 'admin.impersonate.session.invalid';
+    req.adminAuditMetadata = {
+      ...req.adminAuditMetadata,
+      validationReason: validation.reason,
+    };
+    res.status(statusCode).json({
+      error: statusCode === 404 ? 'Not Found' : 'Forbidden',
+      status: statusCode,
+      message:
+        validation.reason === 'expired'
+          ? 'Impersonation session has expired; start a new session to continue'
+          : validation.reason === 'ended'
+            ? 'Impersonation session has ended; start a new session to continue'
+            : validation.reason === 'wallet_mismatch'
+              ? 'Session target wallet does not match requested wallet'
+              : validation.reason === 'actor_mismatch'
+                ? 'Session actor does not match requesting admin'
+                : 'Impersonation session not found',
+    });
+    return;
+  }
+
   req.adminAuditAction = 'admin.impersonate';
 
   try {
     const snapshot = await buildImpersonatedVaultState(wallet);
-    res.status(200).json(snapshot);
+    res.status(200).json({
+      ...snapshot,
+      impersonationSession: {
+        id: validation.session.id,
+        expiresAt: validation.session.expiresAt,
+        reason: validation.session.reason,
+      },
+    });
   } catch (error) {
     req.adminAuditAction = 'admin.impersonate.failed';
     req.adminAuditMetadata = {
@@ -1471,6 +1776,43 @@ app.post('/admin/webhooks', validateApiKey, (req: Request, res: Response) => {
 });
 
 /**
+ * POST /admin/webhooks/:id/verify - run challenge-response verification for an endpoint
+ */
+app.post('/admin/webhooks/:id/verify', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    const endpoint = await verifyWebhookEndpoint(req.params.id);
+    if (!endpoint) {
+      res.status(404).json({
+        error: 'Not Found',
+        status: 404,
+        message: 'Webhook endpoint not found',
+      });
+      return;
+    }
+
+    await recordAdminAuditLog(req, 'webhook.verify', endpoint.verificationStatus === 'verified' ? 200 : 422, {
+      endpointId: endpoint.id,
+      verificationStatus: endpoint.verificationStatus,
+      lastVerificationError: endpoint.lastVerificationError,
+    });
+
+    res.status(endpoint.verificationStatus === 'verified' ? 200 : 422).json({
+      message:
+        endpoint.verificationStatus === 'verified'
+          ? 'Webhook endpoint verified'
+          : 'Webhook endpoint verification failed',
+      endpoint,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to verify webhook endpoint',
+    });
+  }
+});
+
+/**
  * PATCH /admin/webhooks/:id - update webhook endpoint
  */
 app.patch('/admin/webhooks/:id', validateApiKey, (req: Request, res: Response) => {
@@ -1564,6 +1906,56 @@ app.post('/admin/webhooks/:id/restore', validateApiKey, async (req: Request, res
     message: 'Webhook endpoint restored',
     endpoint,
   });
+});
+
+/**
+ * GET /admin/webhooks/dead-letter - list permanently failed webhook deliveries
+ */
+app.get('/admin/webhooks/dead-letter', validateApiKey, (req: Request, res: Response) => {
+  const endpointId = typeof req.query.endpointId === 'string' ? req.query.endpointId : undefined;
+  const eventType = typeof req.query.eventType === 'string' ? req.query.eventType : undefined;
+  const start = typeof req.query.start === 'string' ? req.query.start : undefined;
+  const end = typeof req.query.end === 'string' ? req.query.end : undefined;
+  const limit = parseInt(String(req.query.limit || '100'), 10);
+
+  res.status(200).json({
+    deadLetters: listWebhookDeadLetters({
+      endpointId,
+      eventType: eventType as any,
+      start,
+      end,
+      limit,
+    }),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+/**
+ * POST /admin/webhooks/dead-letter/:id/retry - re-queue a dead-letter delivery
+ */
+app.post('/admin/webhooks/dead-letter/:id/retry', validateApiKey, async (req: Request, res: Response) => {
+  try {
+    const entry = await retryWebhookDeadLetter(req.params.id);
+    if (!entry) {
+      res.status(404).json({
+        error: 'Not Found',
+        status: 404,
+        message: 'Dead-letter entry not found',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      message: 'Dead-letter entry re-queued for delivery',
+      deadLetter: entry,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Internal Server Error',
+      status: 500,
+      message: error instanceof Error ? error.message : 'Failed to retry dead-letter entry',
+    });
+  }
 });
 
 /**

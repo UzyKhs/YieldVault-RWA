@@ -5,6 +5,7 @@ import PageHeader from "../components/PageHeader";
 import { useVault } from "../context/VaultContext";
 import Skeleton from "../components/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
+import APYTrendChart from "../components/APYTrendChart";
 import { useNavigate } from "react-router-dom";
 
 const Analytics: React.FC = () => {
@@ -69,12 +70,9 @@ const Analytics: React.FC = () => {
                         </div>
                     </div>
 
-                    <EmptyState
-                        variant="minimal"
-                        title="Advanced Analytics Coming Soon"
-                        description="We're currently indexing historical data to provide you with deeper insights into pool health and asset stability."
-                        icon={<Activity size={32} />}
-                    />
+                    <div style={{ marginTop: "32px" }}>
+                        <APYTrendChart />
+                    </div>
                 </>
             ) : (
                 /* Empty state: loading done, no TVL / no historical data */

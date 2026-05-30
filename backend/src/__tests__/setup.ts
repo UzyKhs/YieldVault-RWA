@@ -39,3 +39,21 @@ class PatchedPrismaClient extends OriginalPrismaClient {
 
 // Replace the exported PrismaClient
 PrismaClientModule.PrismaClient = PatchedPrismaClient;
+
+// Register default admin API keys for integration tests that use test-admin-key.
+const { registerApiKey } = require('../middleware/apiKeyAuth') as typeof import('../middleware/apiKeyAuth');
+const defaultAdminKey = process.env.ADMIN_API_KEY || 'test-admin-key';
+registerApiKey(defaultAdminKey);
+registerApiKey('super-admin-test-key', { role: 'super-admin' });
+
+/** Valid 56-character Stellar test wallet (G + 55 base32 chars). */
+export const VALID_TEST_WALLET =
+  'G234567ABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQ';
+
+/** Second valid wallet for multi-wallet test scenarios. */
+export const SECOND_TEST_WALLET =
+  'G345678ABCDEFGHIJKLMNOPQRSTUVWXYZ345678ABCDEFGHIJKLMNOPQR';
+
+/** Third valid wallet for multi-wallet test scenarios. */
+export const THIRD_TEST_WALLET =
+  'G456789ABCDEFGHIJKLMNOPQRSTUVWXYZ456789ABCDEFGHIJKLMNOPQR';

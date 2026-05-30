@@ -123,6 +123,7 @@ Add `?sslmode=require` for production databases
 
 ## 📚 Documentation Links
 
+- **Complete Matrix:** [docs/ENV_VARIABLE_MATRIX.md](./docs/ENV_VARIABLE_MATRIX.md)
 - **Full Guide:** [ENVIRONMENT_SETUP_GUIDE.md](./ENVIRONMENT_SETUP_GUIDE.md)
 - **Security Checklist:** [SECURITY_ENV_CHECKLIST.md](./SECURITY_ENV_CHECKLIST.md)
 - **Quick Start:** [ENV_SETUP_README.md](./ENV_SETUP_README.md)

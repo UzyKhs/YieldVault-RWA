@@ -238,6 +238,9 @@ pub enum VaultError {
 
 ## 5. Data Flow: User Deposit Journey
 
+For full request-to-confirmation sequence diagrams covering both deposit and withdrawal paths (including the 24-hour timelock flow), see **[Deposit & Withdrawal Lifecycle](./DEPOSIT_WITHDRAWAL_LIFECYCLE.md)**.
+
+
 ```
 User Deposit Flow:
 ─────────────────

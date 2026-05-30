@@ -101,7 +101,7 @@ export class EventPollingService {
       this.lockValue = `leader-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
       // Try to acquire lock with 30 second expiry
-      const result = await client.set(this.lockKey, this.lockValue, 'NX', 'PX', 30000);
+      const result = await client.set(this.lockKey, this.lockValue, 'PX', 30000, 'NX');
       
       if (result === 'OK') {
         this.isLeader = true;
@@ -168,7 +168,7 @@ export class EventPollingService {
 
       try {
         // Renew lock with new 30 second expiry
-        const result = await client.set(this.lockKey, this.lockValue, 'XX', 'PX', 30000);
+        const result = await client.set(this.lockKey, this.lockValue, 'PX', 30000, 'XX');
         if (result !== 'OK') {
           logger.log('warn', 'Failed to renew leader lock - may have lost leadership', {
             lockKey: this.lockKey,
@@ -483,10 +483,3 @@ export async function replayEventsForRange(fromLedger: number, toLedger: number)
   
   return pollingService.replayEventsForRange(fromLedger, toLedger);
 }
-
-export { EventPollingService };
-
-/**
- * Exports the EventPollingService class for direct instantiation and use.
- */
-export { EventPollingService };

@@ -86,7 +86,7 @@ export async function listApiKeyAuditEvents(
 
   const whereSql =
     whereClauses.length > 0
-      ? Prisma.sql`WHERE ${Prisma.join(whereClauses, Prisma.sql` AND `)}`
+      ? Prisma.sql`WHERE ${Prisma.join(whereClauses, ' AND ')}`
       : Prisma.empty;
 
   const rows = await prisma.$queryRaw<

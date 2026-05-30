@@ -4,6 +4,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import Portfolio from "./Portfolio";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "../context/ToastContext";
+import { PreferencesProvider } from "../context/PreferencesContext";
 
 const mockHoldings = [
   {
@@ -100,19 +101,21 @@ function renderPortfolio(
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
-        <ToastProvider>
-          <Routes>
-            <Route
-              path="/portfolio"
-              element={
-                <>
-                  <Portfolio walletAddress={walletAddress} />
-                  <LocationDisplay />
-                </>
-              }
-            />
-          </Routes>
-        </ToastProvider>
+        <PreferencesProvider>
+          <ToastProvider>
+            <Routes>
+              <Route
+                path="/portfolio"
+                element={
+                  <>
+                    <Portfolio walletAddress={walletAddress} />
+                    <LocationDisplay />
+                  </>
+                }
+              />
+            </Routes>
+          </ToastProvider>
+        </PreferencesProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -135,12 +138,13 @@ describe("Portfolio", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows the wallet prompt when disconnected", () => {
+  it("shows the onboarding panel when disconnected", () => {
     renderPortfolio("/portfolio", null);
 
     expect(
-      screen.getByText(/Please connect your wallet to view your portfolio/i),
+      screen.getByRole("region", { name: /Getting started guide/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Connect Your Wallet")).toBeInTheDocument();
   });
 
   it("renders holdings in the reusable table", async () => {

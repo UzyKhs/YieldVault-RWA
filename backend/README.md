@@ -120,6 +120,37 @@ Authorization: ApiKey <admin-key>
 
 Returns recent admin activities with optional filters: `action`, `actor`, `statusCode`, and `limit`.
 
+### Signed wallet actions (nonce + replay protection)
+
+Protected routes (`POST /api/v1/auth/login`, vault deposits/withdrawals) accept single-use server nonces:
+
+1. `POST /api/v1/auth/nonce` with `{ walletAddress, action }` → `{ nonce, message, expiresAt, expiresIn }`
+2. Sign `message` with the wallet (Ed25519 in production, HMAC in dev/test)
+3. Submit the action with `{ walletAddress, nonce, signature, ... }`
+
+| Error | HTTP | `code` |
+|-------|------|--------|
+| Missing nonce/signature | 400 | `SIGNED_ACTION_REQUIRED` |
+| Unknown/mismatched nonce | 401 | `NONCE_NOT_FOUND` / `NONCE_ACTION_MISMATCH` |
+| Expired nonce | 401 | `NONCE_EXPIRED` |
+| Reused nonce | 401 | `NONCE_REPLAY` |
+| Bad signature | 401 | `SIGNATURE_INVALID` |
+
+Configure via `WALLET_NONCE_ENFORCEMENT` (strict in production) and `WALLET_SIGNATURE_MODE` (`stellar` \| `hmac`).
+
+### Admin API Key RBAC
+
+All `/admin/*` routes require `Authorization: ApiKey <key>`. Keys are assigned one of four roles (least → most privileged):
+
+| Role | Capabilities |
+|------|----------------|
+| `viewer` | Read-only admin endpoints (metrics, audit logs, config snapshots) |
+| `operator` | Viewer + operational writes (maintenance, cache, allowlist, webhooks, jobs, exports) |
+| `admin` | Operator + privileged webhook `url`/`secret` updates and API key lifecycle |
+| `super-admin` | Admin + impersonation, global idempotency flush, minting super-admin keys |
+
+Forbidden requests return `403` with `requiredPermission` in the JSON body. Maintenance and webhook PATCH bodies are validated so privileged parameters (`enabled`, `url`, `secret`, etc.) require the matching permission tier.
+
 ### Background Job Dashboard
 
 ```

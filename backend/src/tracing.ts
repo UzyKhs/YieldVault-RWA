@@ -88,12 +88,19 @@ export function getTracer(): Tracer {
  * Wraps an async function in a named span.
  * Automatically records exceptions and sets error status.
  */
+const NOOP_SPAN = {
+  setAttributes: () => {},
+  setStatus: () => {},
+  recordException: () => {},
+  end: () => {},
+} as unknown as Span;
+
 export async function withSpan<T>(
   name: string,
   fn: (span: Span) => Promise<T>,
   attributes?: Record<string, string | number | boolean>,
 ): Promise<T> {
-  if (!OTEL_ENABLED) return fn(trace.getTracer(SERVICE_NAME).startSpan(name));
+  if (!OTEL_ENABLED) return fn(NOOP_SPAN);
 
   const tracer = getTracer();
   return tracer.startActiveSpan(name, async (span) => {

@@ -132,6 +132,8 @@ pub enum DataKey {
     UserDeposit(Address),
     PerUserCap,
     StrategyWhitelist(Address),
+    StrategyCap(Address),
+    StrategyRiskThreshold(Address),
     // Goal 1: protocol fee
     FeeBps,
     Treasury,
@@ -190,6 +192,10 @@ pub enum VaultError {
     NoPendingWithdrawal = 8,
     /// Strategy allocation would leave idle liquidity below the configured buffer.
     LiquidityBufferNotMet = 9,
+    /// Strategy allocation exceeds configured cap.
+    ExceedsStrategyCap = 10,
+    /// Strategy allocation exceeds configured risk threshold.
+    ExceedsRiskThreshold = 11,
 }
 
 #[contractclient(name = "KoreanDebtStrategyClient")]
@@ -965,6 +971,21 @@ impl YieldVault {
         let strategy_addr = Self::strategy(env.clone()).expect("no strategy set");
         let strategy_client = StrategyClient::new(&env, &strategy_addr);
 
+        // Cap check
+        let cap: i128 = env.storage().instance().get(&DataKey::StrategyCap(strategy_addr.clone())).unwrap_or(i128::MAX);
+        let total_invested = strategy_client.total_value();
+        if total_invested.checked_add(amount).expect("overflow") > cap {
+            return Err(VaultError::ExceedsStrategyCap);
+        }
+
+        // Risk Threshold check
+        let threshold: i128 = env.storage().instance().get(&DataKey::StrategyRiskThreshold(strategy_addr.clone())).unwrap_or(10_000);
+        let total_assets = Self::total_assets(env.clone());
+        let new_total_invested = total_invested.checked_add(amount).expect("overflow");
+        if total_assets > 0 && (new_total_invested.checked_mul(10_000).expect("overflow") / total_assets) > threshold {
+            return Err(VaultError::ExceedsRiskThreshold);
+        }
+
         let idle_ta = env
             .storage()
             .instance()
@@ -1225,6 +1246,23 @@ impl YieldVault {
             .instance()
             .get(&DataKey::OracleHeartbeat)
             .unwrap_or(crate::oracle::DEFAULT_HEARTBEAT_SECONDS)
+    }
+
+    /// Set the maximum strategy allocation cap.
+    pub fn set_strategy_cap(env: Env, strategy: Address, cap: i128) {
+        let admin: Address = get_admin(&env).expect("Admin not set");
+        admin.require_auth();
+        env.storage().instance().set(&DataKey::StrategyCap(strategy), &cap);
+    }
+
+    /// Set the strategy risk threshold in basis points (0–10000).
+    pub fn set_strategy_risk_threshold(env: Env, strategy: Address, threshold: i128) {
+        let admin: Address = get_admin(&env).expect("Admin not set");
+        admin.require_auth();
+        if threshold < 0 || threshold > 10_000 {
+            panic!("threshold must be 0-10000");
+        }
+        env.storage().instance().set(&DataKey::StrategyRiskThreshold(strategy), &threshold);
     }
 
     pub fn report_benji_yield(env: Env, strategy: Address, amount: i128) {
